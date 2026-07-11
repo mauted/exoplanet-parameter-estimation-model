@@ -14,7 +14,10 @@ from exoplanet_est.data import (
     save_synthetic_dataset_csv,
 )
 from exoplanet_est.keplerian import OrbitalParameters, semi_amplitude_from_masses
-from exoplanet_est.optimize import fit_radial_velocity_curve
+from exoplanet_est.optimize import (
+    export_optimization_history_csv,
+    fit_radial_velocity_curve,
+)
 from exoplanet_est.plot import (
     ShowcaseTruth,
     export_plot_series,
@@ -108,6 +111,13 @@ def export_synthetic() -> None:
     )
     save_synthetic_dataset_csv(dataset, Path("outputs/synthetic_rv_dataset.csv"))
     fit_result = fit_radial_velocity_curve(dataset, star_mass_kg=star_mass_kg, seed=12)
+    if fit_result.history is not None:
+        history_path = export_optimization_history_csv(
+            fit_result.history,
+            DATA_DIR / "rv_fit_preview_convergence.csv",
+            truth=truth,
+        )
+        print(f"wrote {history_path} ({len(fit_result.history.points)} steps)")
     export_one(
         stem="rv_fit_preview",
         dataset=dataset,

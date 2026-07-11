@@ -181,7 +181,9 @@ candidate is then polished with a bounded nonlinear least-squares solver
 \citep{virtanen2020scipy}. Search bounds are constructed from the observation
 baseline and the observed velocity span, with $0 \le e \le 0.85$ to avoid
 near-parabolic degeneracies; numerical settings and per-series bounds are
-listed in Appendix~\ref{app:optimizer}.
+listed in Appendix~\ref{app:optimizer}. For the synthetic validation run we
+also record the best-so-far $\chi^2$ after each differential-evolution
+generation (Figure~\ref{fig:convergence}).
 
 \subsection{Orbit visualization}
 
@@ -580,6 +582,19 @@ series). The local stage is SciPy's bounded nonlinear least-squares solver
 applied to the weighted residual vector, with a budget of
 $2\times 10^4$ function evaluations. The free parameter vector is ordered as
 $(K, P, e, \omega, t_0, \gamma)$.
+
+Figure~\ref{fig:convergence} shows the synthetic-run convergence trace: the
+best population $\chi^2$ after each differential-evolution generation, the
+final least-squares polish, and the relative errors in $K$ and $P$ against the
+planted truth. Early generations reduce $\chi^2$ by orders of magnitude; once
+$P$ is approximately recovered, further improvement is comparatively gradual
+before the local polish.
+
+\PaperConvergenceFigure{rv_fit_preview}{%
+Synthetic optimizer convergence. Left: best-so-far weighted $\chi^2$ after
+each differential-evolution generation (circles) and after the final
+least-squares polish (square). Right: relative errors in the recovered
+semi-amplitude $K$ and period $P$ versus the planted truth.}{fig:convergence}
 
 For the synthetic dataset the default bound construction of the package is
 used. For the archived series we adopt slightly wider amplitude and period

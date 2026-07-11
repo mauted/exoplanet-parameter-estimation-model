@@ -16,14 +16,21 @@ from exoplanet_est.keplerian import (
     semi_amplitude_from_masses,
     semi_major_axis_from_period,
 )
-from exoplanet_est.optimize import RVFitResult, fit_radial_velocity_curve
+from exoplanet_est.optimize import (
+    OptimizationHistory,
+    RVFitResult,
+    export_optimization_history_csv,
+    fit_radial_velocity_curve,
+)
 
 __all__ = [
     "OrbitalParameters",
     "ARCHIVED_DATA_DIR",
+    "OptimizationHistory",
     "RVFitResult",
     "RadialVelocityDataset",
     "estimate_planet_mass",
+    "export_optimization_history_csv",
     "fit_radial_velocity_curve",
     "generate_synthetic_dataset",
     "load_archived_star_dataset",

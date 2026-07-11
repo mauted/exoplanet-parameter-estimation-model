@@ -80,6 +80,7 @@ from seconds to days and returns the matching stellar mass.
 - `examples/fit_synthetic.py` - end-to-end showcase demo
 - `examples/fit_archived_star.py` - archived real-data fitting example
 - `examples/export_paper_figures.py` - regenerate paper CSVs / print PDFs / dark PNGs
+  (including the synthetic optimizer convergence trace)
 - `docs/exoplanet_showcase_report.tex` - companion LaTeX write-up
 - `docs/figure_macros.tex` - PGFPlots macros used by the paper
 
