@@ -36,11 +36,13 @@ refinement. From the fitted amplitude and an assumed stellar mass we derive a
 minimum planet mass and orbital semi-major axis under the edge-on
 inclination limit. Synthetic experiments recover planted values of $K$ and $P$
 to within a few percent at residual RMS of $\sim 2\,\mathrm{m\,s^{-1}}$.
-Application to an observational Doppler-shift series yields a short-period,
-nearly circular solution with $P \approx 4.27\,\mathrm{d}$,
-$K \approx 56.7\,\mathrm{m\,s^{-1}}$, and
-$M_p\sin i \approx 0.49\,M_J$. A velocity-Verlet two-body integration is used
-only for post-fit orbit visualization.
+Application to four observational Doppler-shift series recovers a range of
+orbital architectures, including a short-period, nearly circular solution
+(\texttt{star0}: $P \approx 4.27\,\mathrm{d}$,
+$K \approx 56.7\,\mathrm{m\,s^{-1}}$,
+$M_p\sin i \approx 0.49\,M_J$) as well as longer-period companions. A
+velocity-Verlet two-body integration is used only for post-fit orbit
+visualization.
 \end{abstract}
 
 \section{Introduction}
@@ -199,13 +201,23 @@ $0.7\,\mathrm{m\,s^{-1}}$ are added to each sample.
 
 \subsection{Observational Doppler series}
 
-We also analyze an observational Doppler-shift time series for a
-$1.11\,M_\odot$ host (dataset \texttt{star0}). Times are recorded in seconds
-and converted to days; Doppler shifts are converted to radial velocities as
-described above. In the absence of published per-point uncertainties we adopt
-a uniform $\sigma = 1\,\mathrm{m\,s^{-1}}$ for weighting. Three additional
-hosts with stellar masses $1.39$, $2.30$, and $1.34\,M_\odot$ are available in
-the same catalog for follow-up analysis.
+We analyze four observational Doppler-shift time series
+(\texttt{star0}--\texttt{star3}) with host masses
+$1.11$, $1.39$, $2.30$, and $1.34\,M_\odot$, respectively. Times are recorded
+in seconds and converted to days; Doppler shifts are converted to radial
+velocities as described above. In the absence of published per-point
+uncertainties we adopt a uniform $\sigma = 1\,\mathrm{m\,s^{-1}}$ for
+weighting.
+
+\paragraph{Data provenance.}
+These observational files were provided by the author's independent research
+mentor and are understood to originate from a public NASA exoplanet/radial-velocity
+archive. The specific catalog, survey program, or DOI associated with each
+series was not retained with the working copies used here, so we treat the
+files as anonymized archival Doppler time series rather than as named
+discoveries. The analysis below should therefore be read as a methodological
+demonstration on publicly sourced RV-like data, not as a claim of new planet
+discovery or a re-reduction of a particular NASA data release.
 
 \section{Results}
 
@@ -244,30 +256,52 @@ elements.}
 \label{fig:synthetic}
 \end{figure}
 
-\subsection{Observational fit for \texttt{star0}}
+\subsection{Observational fits for \texttt{star0}--\texttt{star3}}
 
-Fitting the \texttt{star0} Doppler series yields a short-period, nearly
-circular solution (Table~\ref{tab:star0}; Fig.~\ref{fig:star0}). The low
-eccentricity and coherent phase coverage over $\sim 14\,\mathrm{d}$ produce a
-stable global minimum. Under the edge-on assumption the companion mass is
+Table~\ref{tab:obs} summarizes the best-fit Keplerian parameters for all four
+observational series. Figures~\ref{fig:star0}--\ref{fig:star3} show the
+corresponding RV curves and barycentric orbits.
+
+\texttt{star0} yields a short-period, nearly circular solution with coherent
+phase coverage over $\sim 14\,\mathrm{d}$ and residual RMS
+$5.23\,\mathrm{m\,s^{-1}}$. Under the edge-on assumption the companion mass is
 $M_p\sin i \approx 0.49\,M_J$ at $a \approx 0.053\,\mathrm{AU}$.
+
+\texttt{star2} and \texttt{star3} recover longer-period solutions
+($P \sim 10^3\,\mathrm{d}$) with residual RMS of $14.4$ and
+$8.5\,\mathrm{m\,s^{-1}}$, respectively. \texttt{star2} is nearly circular
+($e \approx 0.06$), while \texttt{star3} is moderately eccentric
+($e \approx 0.59$).
+
+\texttt{star1} is the most challenging series: the best single-Keplerian model
+returns a long, highly eccentric orbit ($P \approx 3030\,\mathrm{d}$,
+$e \approx 0.83$) but leaves a large residual RMS of
+$314\,\mathrm{m\,s^{-1}}$. That outcome indicates that a single-planet
+Keplerian description is inadequate for this time series under the present
+noise model---possible explanations include incomplete phase coverage of a
+long-period orbit, additional companions, stellar activity, or unmodeled
+instrumental systematics \citep{fischer2014exoplanet,ford2005quantifying}. We
+report the fit for completeness while treating it as a negative control rather
+than a robust orbital solution.
 
 \begin{table}[H]
 \centering
-\caption{Best-fit Keplerian parameters for the \texttt{star0} Doppler series
-($M_\star = 1.11\,M_\odot$).}
-\label{tab:star0}
-\begin{tabular}{@{}lc@{}}
+\caption{Best-fit single-planet Keplerian parameters for the four observational
+Doppler series. Masses assume $\sin i = 1$.}
+\label{tab:obs}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-Parameter & Value \\
+Quantity & \texttt{star0} & \texttt{star1} & \texttt{star2} & \texttt{star3} \\
 \midrule
-$P$ (d) & 4.269 \\
-$K$ ($\mathrm{m\,s^{-1}}$) & 56.694 \\
-$e$ & 0.002 \\
-$\gamma$ ($\mathrm{m\,s^{-1}}$) & 9.398 \\
-$a$ (AU) & 0.053 \\
-$M_p\sin i$ ($M_J$) & 0.485 \\
-RMS ($\mathrm{m\,s^{-1}}$) & 5.23 \\
+$N$ points & 32 & 98 & 51 & 44 \\
+$M_\star$ ($M_\odot$) & 1.11 & 1.39 & 2.30 & 1.34 \\
+$P$ (d) & 4.269 & 3029.7 & 991.9 & 986.7 \\
+$K$ ($\mathrm{m\,s^{-1}}$) & 56.69 & 352.7 & 119.8 & 93.88 \\
+$e$ & 0.002 & 0.832 & 0.064 & 0.587 \\
+$\gamma$ ($\mathrm{m\,s^{-1}}$) & 9.40 & $-18.76$ & $-0.30$ & 41.56 \\
+$a$ (AU) & 0.053 & 4.591 & 2.573 & 2.141 \\
+$M_p\sin i$ ($M_J$) & 0.485 & 17.50 & 10.26 & 4.534 \\
+RMS ($\mathrm{m\,s^{-1}}$) & 5.23 & 313.9 & 14.36 & 8.50 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -281,6 +315,29 @@ barycentric orbit.}
 \label{fig:star0}
 \end{figure}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/archived_star1_fit.png}
+\caption{Best single-Keplerian fit to \texttt{star1}. The large residual RMS
+indicates that this series is not well described by a single companion under
+the present model assumptions.}
+\label{fig:star1}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/archived_star2_fit.png}
+\caption{Keplerian fit to the \texttt{star2} Doppler observations.}
+\label{fig:star2}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/archived_star3_fit.png}
+\caption{Keplerian fit to the \texttt{star3} Doppler observations.}
+\label{fig:star3}
+\end{figure}
+
 \section{Discussion}
 
 The synthetic experiment confirms that differential evolution followed by
@@ -291,15 +348,21 @@ weakly constrained element in our synthetic run, as expected when the
 signal-to-noise ratio is modest and the true $e$ is moderate
 \citep{ford2005quantifying}.
 
-For \texttt{star0}, the near-zero eccentricity and short period are
-characteristic of hot-Jupiter systems first revealed by RV surveys
-\citep{mayor1995jupiter}. Several caveats apply. First, the adopted
-uncertainties are uniform and may not reflect the true error budget, so the
-formal $\chi^2$ should not be over-interpreted. Second, the mass we report is
-$M_p\sin i$; without an independent inclination constraint the true mass may
-be larger. Third, the model assumes a single planet and a constant systemic
-velocity, omitting stellar activity, instrumental offsets, and additional
-companions \citep{fischer2014exoplanet}.
+Across the observational sample, \texttt{star0} behaves like a compact,
+low-eccentricity RV signal of the kind first revealed by early Doppler surveys
+\citep{mayor1995jupiter}. \texttt{star2} and \texttt{star3} illustrate
+longer-period recoveries with acceptable residuals, while \texttt{star1}
+demonstrates a clear failure mode of the single-planet model. Several caveats
+apply to all four fits. First, the adopted uncertainties are uniform and may
+not reflect the true error budget, so formal $\chi^2$ values should not be
+over-interpreted. Second, the masses we report are $M_p\sin i$; without an
+independent inclination constraint the true masses may be larger. Third, the
+model assumes a single planet and a constant systemic velocity, omitting
+stellar activity, instrumental offsets, and additional companions
+\citep{fischer2014exoplanet}. Fourth, because the specific NASA archive
+identifiers were not retained with the working files, these results are best
+viewed as pipeline validation on archival Doppler series rather than as
+definitive orbital solutions for named systems.
 
 Natural extensions include periodogram-based period initialization
 \citep{cumming2004detectability}, multi-planet Keplerian models
@@ -312,10 +375,20 @@ We have described a Keplerian radial-velocity pipeline for single-planet
 parameter estimation. The method combines an analytic RV forward model,
 differential-evolution global search, and least-squares refinement, with
 derived planet mass and semi-major axis under the edge-on limit. Synthetic
-tests recover $K$ and $P$ to within a few percent. Application to an
-observational Doppler series yields a coherent short-period, low-eccentricity
-solution. The accompanying open-source implementation provides a reproducible
-basis for further methodological development.
+tests recover $K$ and $P$ to within a few percent. Application to four
+observational Doppler series recovers a short-period circular solution, two
+longer-period companions with moderate residuals, and one series for which a
+single Keplerian model is clearly inadequate. The accompanying open-source
+implementation provides a reproducible basis for further methodological
+development.
+
+\section*{Acknowledgments}
+
+The author thanks his independent research mentor for providing the
+observational Doppler time series used in this study. Those data are
+understood to have been drawn from a public NASA exoplanet/radial-velocity
+archive; the specific catalog identifiers were not retained with the working
+copies analyzed here.
 
 \section*{Software}
 

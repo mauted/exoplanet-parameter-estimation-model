@@ -36,12 +36,16 @@ That command writes:
 
 ## Archived Observation Data
 
-The recovered observation files now live under `data/archived_observations/`:
+The observational Doppler files live under `data/archived_observations/`:
 
 - `star0.csv` through `star3.csv`
 - `star-masses.csv`
 
-You can fit the recovered `star0` dataset with:
+These series were provided by an independent research mentor and are understood
+to come from a public NASA exoplanet/radial-velocity archive; the specific
+catalog identifiers were not retained with the working copies.
+
+You can fit any of the four datasets with:
 
 ```bash
 MPLBACKEND=Agg uv run python examples/fit_archived_star.py --star-index 0 \
