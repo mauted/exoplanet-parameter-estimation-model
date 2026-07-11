@@ -1,0 +1,22 @@
+[project]
+name = "exoplanet-parameter-estimation-model"
+version = "0.1.0"
+description = "Keplerian radial-velocity fitting and orbit visualization for exoplanet parameter estimation."
+readme = "README.md"
+authors = [
+    { name = "MauricioTedeschi", email = "mauricioatedeschi@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.9.0",
+    "numpy>=2.0.0",
+    "scipy>=1.14.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.27,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "exoplanet_est"
+module-root = "src"
