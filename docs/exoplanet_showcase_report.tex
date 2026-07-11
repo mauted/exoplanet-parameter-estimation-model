@@ -173,7 +173,8 @@ of candidate solutions and updates them by mutation and crossover. The best
 candidate is then polished with a bounded nonlinear least-squares solver
 \citep{virtanen2020scipy}. Search bounds are constructed from the observation
 baseline and the observed velocity span, with $0 \le e \le 0.85$ to avoid
-near-parabolic degeneracies.
+near-parabolic degeneracies; numerical settings and per-series bounds are
+listed in Appendix~\ref{app:optimizer}.
 
 \subsection{Orbit visualization}
 
@@ -257,8 +258,10 @@ elements.}{fig:synthetic}
 \subsection{Observational fits for \texttt{star0}--\texttt{star3}}
 
 Table~\ref{tab:obs} summarizes the best-fit Keplerian parameters for all four
-observational series. Figures~\ref{fig:star0}--\ref{fig:star3} show the
-corresponding RV curves and barycentric orbits.
+observational series. Figure~\ref{fig:star0} shows the cleanest recovery
+(\texttt{star0}); the remaining RV and orbit panels appear in
+Appendix~\ref{app:figures}, and the full six-element solutions are collected in
+Appendix~\ref{app:elements}.
 
 \texttt{star0} yields a short-period, nearly circular solution with coherent
 phase coverage over $\sim 14\,\mathrm{d}$ and residual RMS
@@ -274,18 +277,20 @@ $8.5\,\mathrm{m\,s^{-1}}$, respectively. \texttt{star2} is nearly circular
 \texttt{star1} is the most challenging series: the best single-Keplerian model
 returns a long, highly eccentric orbit ($P \approx 3030\,\mathrm{d}$,
 $e \approx 0.83$) but leaves a large residual RMS of
-$314\,\mathrm{m\,s^{-1}}$. That outcome indicates that a single-planet
-Keplerian description is inadequate for this time series under the present
-noise model---possible explanations include incomplete phase coverage of a
-long-period orbit, additional companions, stellar activity, or unmodeled
-instrumental systematics \citep{fischer2014exoplanet,ford2005quantifying}. We
-report the fit for completeness while treating it as a negative control rather
-than a robust orbital solution.
+$314\,\mathrm{m\,s^{-1}}$ (Figure~\ref{fig:star1}). That outcome indicates that
+a single-planet Keplerian description is inadequate for this time series under
+the present noise model---possible explanations include incomplete phase
+coverage of a long-period orbit, additional companions, stellar activity, or
+unmodeled instrumental systematics
+\citep{fischer2014exoplanet,ford2005quantifying}. We report the fit for
+completeness while treating it as a negative control rather than a robust
+orbital solution.
 
 \begin{table}[H]
 \centering
 \caption{Best-fit single-planet Keplerian parameters for the four observational
-Doppler series. Masses assume $\sin i = 1$.}
+Doppler series. Masses assume $\sin i = 1$. Full orbital elements are given in
+Table~\ref{tab:obs-full}.}
 \label{tab:obs}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -307,18 +312,8 @@ RMS ($\mathrm{m\,s^{-1}}$) & 5.23 & 313.9 & 14.36 & 8.50 \\
 \PaperFitFigure{archived_star0_fit}{%
 Keplerian fit to the \texttt{star0} Doppler observations. Left:
 radial-velocity time series and best-fit model. Right: corresponding
-barycentric orbit.}{fig:star0}
-
-\PaperFitFigure{archived_star1_fit}{%
-Best single-Keplerian fit to \texttt{star1}. The large residual RMS
-indicates that this series is not well described by a single companion under
-the present model assumptions.}{fig:star1}
-
-\PaperFitFigure{archived_star2_fit}{%
-Keplerian fit to the \texttt{star2} Doppler observations.}{fig:star2}
-
-\PaperFitFigure{archived_star3_fit}{%
-Keplerian fit to the \texttt{star3} Doppler observations.}{fig:star3}
+barycentric orbit. Fits for \texttt{star1}--\texttt{star3} are shown in
+Appendix~\ref{app:figures}.}{fig:star0}
 
 \section{Discussion}
 
@@ -376,10 +371,139 @@ copies analyzed here.
 
 The analysis is implemented in Python using NumPy, SciPy
 \citep{virtanen2020scipy}, and Matplotlib. Source code and example scripts are
-available in the project repository accompanying this manuscript. Print figures
-in this paper are drawn natively with \textsc{PGFPlots} from CSV tables exported
-by \path{examples/export_paper_figures.py}; the same script also writes
-light-theme vector PDF copies under \path{docs/figures/}.
+available in the project repository accompanying this manuscript. Commands used
+to regenerate the paper figures are listed in Appendix~\ref{app:repro}.
+
+\appendix
+
+\section{Additional observational figures}
+\label{app:figures}
+
+Figures~\ref{fig:star1}--\ref{fig:star3} show the RV fits and barycentric
+orbits for the three longer-baseline observational series discussed in the main
+text.
+
+\PaperFitFigure{archived_star1_fit}{%
+Best single-Keplerian fit to \texttt{star1}. The large residual RMS
+indicates that this series is not well described by a single companion under
+the present model assumptions.}{fig:star1}
+
+\PaperFitFigure{archived_star2_fit}{%
+Keplerian fit to the \texttt{star2} Doppler observations.}{fig:star2}
+
+\PaperFitFigure{archived_star3_fit}{%
+Keplerian fit to the \texttt{star3} Doppler observations.}{fig:star3}
+
+\section{Full Keplerian solutions}
+\label{app:elements}
+
+Table~\ref{tab:synth-full} reports all six fitted Keplerian elements for the
+synthetic validation run. Table~\ref{tab:obs-full} lists the corresponding
+solutions for \texttt{star0}--\texttt{star3}. Times of periastron are reported
+in the same day units as the input time series and need not fall inside the
+observational window because the mean anomaly is $2\pi$-periodic.
+
+\begin{table}[H]
+\centering
+\caption{Full synthetic Keplerian solution (planted truth versus recovered fit).}
+\label{tab:synth-full}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Parameter & Truth & Fit & Relative error \\
+\midrule
+$K$ ($\mathrm{m\,s^{-1}}$) & 30.51 & 31.35 & $2.8\%$ \\
+$P$ (d) & 147.5 & 147.16 & $0.2\%$ \\
+$e$ & 0.190 & 0.221 & --- \\
+$\omega$ (rad) & 1.050 & 1.000 & --- \\
+$t_0$ (d) & 18.0 & 459.0 & --- \\
+$\gamma$ ($\mathrm{m\,s^{-1}}$) & 4.50 & 4.68 & --- \\
+$M_p$ ($M_J$) & 0.820 & 0.836 & $2.0\%$ \\
+$a$ (AU) & --- & 0.560 & --- \\
+RMS ($\mathrm{m\,s^{-1}}$) & --- & 2.11 & --- \\
+$\chi^2$ & --- & 84.9 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Full single-planet Keplerian solutions for the observational series.
+Masses assume $\sin i = 1$.}
+\label{tab:obs-full}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Parameter & \texttt{star0} & \texttt{star1} & \texttt{star2} & \texttt{star3} \\
+\midrule
+$K$ ($\mathrm{m\,s^{-1}}$) & 56.69 & 352.7 & 119.8 & 93.88 \\
+$P$ (d) & 4.269 & 3029.7 & 991.9 & 986.7 \\
+$e$ & 0.0023 & 0.832 & 0.064 & 0.587 \\
+$\omega$ (rad) & $-2.883$ & 2.456 & 2.798 & $-2.407$ \\
+$t_0$ (d) & $-4.265$ & $-4092$ & 159.9 & $-1499$ \\
+$\gamma$ ($\mathrm{m\,s^{-1}}$) & 9.40 & $-18.76$ & $-0.30$ & 41.56 \\
+$a$ (AU) & 0.0533 & 4.591 & 2.573 & 2.141 \\
+$M_p\sin i$ ($M_J$) & 0.485 & 17.50 & 10.26 & 4.534 \\
+RMS ($\mathrm{m\,s^{-1}}$) & 5.23 & 313.9 & 14.36 & 8.50 \\
+$\chi^2$ & 875 & $9.65\times 10^6$ & $1.05\times 10^4$ & 3177 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Optimizer configuration}
+\label{app:optimizer}
+
+The global stage uses SciPy's differential-evolution routine with
+\texttt{polish=False}, \texttt{updating=deferred}, a fixed random seed, and
+at most $300$ iterations for the synthetic run ($400$ for the observational
+series). The local stage is SciPy's bounded nonlinear least-squares solver
+applied to the weighted residual vector, with a budget of
+$2\times 10^4$ function evaluations. The free parameter vector is ordered as
+$(K, P, e, \omega, t_0, \gamma)$.
+
+For the synthetic dataset the default bound construction of the package is
+used. For the archived series we adopt slightly wider amplitude and period
+windows keyed to the observed velocity span and baseline, with an expanded
+period upper limit of $6000\,\mathrm{d}$ for \texttt{star1}. In all cases
+$0 \le e \le 0.85$ and $-\pi \le \omega \le \pi$.
+Table~\ref{tab:bounds} lists the numerical bounds used for each fit.
+
+\begin{table}[H]
+\centering
+\caption{Search bounds used for each fit. Units are
+$\mathrm{m\,s^{-1}}$ for $K$ and $\gamma$, days for $P$ and $t_0$, and radians
+for $\omega$.}
+\label{tab:bounds}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Series & $K$ & $P$ & $e$ & $\omega$ & $t_0$ & $\gamma$ \\
+\midrule
+Synthetic & $[1,\,102]$ & $[50.4,\,604]$ & $[0,\,0.85]$ & $[-\pi,\,\pi]$ &
+$[-603,\,606]$ & $[-107,\,97]$ \\
+\texttt{star0} & $[1,\,231]$ & $[0.75,\,15.8]$ & $[0,\,0.85]$ & $[-\pi,\,\pi]$ &
+$[-15.2,\,16.4]$ & $[-223,\,238]$ \\
+\texttt{star1} & $[1,\,2316]$ & $[136,\,6506]$ & $[0,\,0.85]$ & $[-\pi,\,\pi]$ &
+$[-6506,\,6506]$ & $[-2317,\,2315]$ \\
+\texttt{star2} & $[1,\,556]$ & $[44.3,\,2127]$ & $[0,\,0.85]$ & $[-\pi,\,\pi]$ &
+$[-2127,\,2127]$ & $[-541,\,571]$ \\
+\texttt{star3} & $[1,\,409]$ & $[39.1,\,1879]$ & $[0,\,0.85]$ & $[-\pi,\,\pi]$ &
+$[-1879,\,1879]$ & $[-365,\,452]$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\section{Reproducibility commands}
+\label{app:repro}
+
+From the project root, regenerate the CSV tables and light-theme vector PDFs,
+then compile this manuscript, with
+\begin{verbatim}
+MPLBACKEND=Agg uv run python examples/export_paper_figures.py
+latexmk -pdf -cd docs/exoplanet_showcase_report.tex
+\end{verbatim}
+Print figures in the PDF are drawn natively with \textsc{PGFPlots} from the
+exported CSV tables under \path{docs/figures/plotdata/}. The same export script
+also writes Matplotlib PDF copies under \path{docs/figures/}.
 
 \bibliographystyle{unsrtnat}
 \bibliography{references}
