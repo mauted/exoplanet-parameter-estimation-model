@@ -79,9 +79,12 @@ from seconds to days and returns the matching stellar mass.
 
 ## Companion report
 
-A compiled report is included at `docs/exoplanet_showcase_report.pdf`. It
-summarizes the recovered archive, the rebuilt fitting pipeline, and results on
-both the synthetic benchmark and the archived `star0` dataset.
+A scientific write-up is included at `docs/exoplanet_showcase_report.pdf`
+(source: `docs/exoplanet_showcase_report.tex`, bibliography:
+`docs/references.bib`). Citations are numbered in order of appearance
+(`[1]`, `[2]`, …), which is convenient for an arXiv preprint. The paper
+presents the Keplerian RV model, fitting method, synthetic validation, and
+observational results with canonical literature citations.
 
 ## Notes
 

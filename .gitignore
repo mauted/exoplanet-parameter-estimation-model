@@ -10,3 +10,5 @@ docs/*.fls
 docs/*.log
 docs/*.out
 docs/*.toc
+docs/*.blg
+docs/*.synctex.gz

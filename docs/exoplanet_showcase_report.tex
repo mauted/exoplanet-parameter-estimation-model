@@ -1,11 +1,22 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
-\usepackage{amsmath}
+\usepackage{amsmath,amssymb}
 \usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage{hyperref}
 \usepackage{float}
+\usepackage{siunitx}
 
-\title{Exoplanet Parameter Estimation Showcase\\\large Reconstructing and Modernizing a Legacy Prototype}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue
+}
+
+\title{Keplerian Radial-Velocity Fitting for Single-Planet\\
+Exoplanet Parameter Estimation}
 \author{Mauricio Tedeschi}
 \date{\today}
 
@@ -13,199 +24,306 @@
 \maketitle
 
 \begin{abstract}
-This document accompanies the rebuilt \texttt{exoplanet-parameter-estimation-model}
-project. The recovered archive contained a three-script prototype, four
-real Doppler time-series CSVs, a stellar mass table, and two draw.io design
-artifacts. The rebuild packages that work into a reproducible \texttt{uv}-managed
-Python project with a Keplerian radial-velocity model, differential-evolution
-search, local least-squares refinement, synthetic validation, and physics-based
-orbit visualization. This report summarizes the archived workflow, explains the
-updated modeling pipeline, and documents results on both synthetic data and the
-recovered \texttt{star0} observation set.
+The radial-velocity (RV) method remains one of the foundational techniques for
+detecting and characterizing extrasolar planets. We present a compact,
+reproducible pipeline for estimating the orbital parameters of a single
+companion from Doppler time series. The forward model is the standard
+Keplerian RV curve parameterized by semi-amplitude $K$, period $P$,
+eccentricity $e$, argument of periastron $\omega$, time of periastron $t_0$,
+and systemic velocity $\gamma$. Parameters are recovered with a global
+differential-evolution search followed by local nonlinear least-squares
+refinement. From the fitted amplitude and an assumed stellar mass we derive a
+minimum planet mass and orbital semi-major axis under the edge-on
+inclination limit. Synthetic experiments recover planted values of $K$ and $P$
+to within a few percent at residual RMS of $\sim 2\,\mathrm{m\,s^{-1}}$.
+Application to an observational Doppler-shift series yields a short-period,
+nearly circular solution with $P \approx 4.27\,\mathrm{d}$,
+$K \approx 56.7\,\mathrm{m\,s^{-1}}$, and
+$M_p\sin i \approx 0.49\,M_J$. A velocity-Verlet two-body integration is used
+only for post-fit orbit visualization.
 \end{abstract}
 
-\section{Archived Material}
+\section{Introduction}
 
-The recovered archive contributed the following assets:
-\begin{itemize}
-    \item legacy scripts: \texttt{graphcomparison.py}, \texttt{nbodysolver.py}, and \texttt{rvdatareader.py}
-    \item a stellar mass catalog for four systems
-    \item four real Doppler-shift datasets: \texttt{star0.csv} through \texttt{star3.csv}
-    \item two draw.io diagram files labeled ``M\_p and R space'' and ``M\_p and R space after iteration''
-\end{itemize}
+The discovery of 51~Pegasi~b established Doppler spectroscopy as a practical
+route to detecting planets around solar-type stars
+\citep{mayor1995jupiter,marcy1996planet}. In the RV method, the star and
+planet orbit their common barycenter; the line-of-sight component of the
+stellar motion appears as a periodic Doppler shift in the stellar spectrum.
+Modern surveys and modeling frameworks treat this signal with analytic
+Keplerian orbits and statistically motivated fitting procedures
+\citep{wright2009efficient,cumming2004detectability,fischer2014exoplanet}.
 
-The archive did not include a finished paper or \LaTeX{} manuscript, so this
-report serves as a reconstructed write-up grounded in the recovered code,
-datasets, and the new implementation.
+For a single planet on a Keplerian orbit, the stellar radial velocity is fully
+specified by a small set of orbital elements
+\citep{murray1999solar,murray2010keplerian}. The semi-amplitude $K$ encodes
+the planet-to-star mass ratio and orbital scale, while $P$ and $e$ control the
+periodicity and waveform shape. Because the likelihood surface can be
+multimodal---especially when eccentricity and phase are free---global
+optimization or Bayesian sampling is often preferred over purely local
+gradient methods \citep{ford2005quantifying,storn1997differential}.
 
-\section{Legacy Prototype}
+This work implements a transparent single-planet RV estimator intended for
+reproducible analysis and pedagogical demonstration. The pipeline
+(i)~converts Doppler shifts to radial velocities,
+(ii)~fits a Keplerian model with differential evolution plus least-squares
+polish, and
+(iii)~derives physical parameters and a barycentric orbit visualization.
+We validate the method on synthetic data with known ground truth and apply it
+to an observational Doppler time series.
 
-The original project estimated exoplanet parameters by combining three pieces:
-\begin{enumerate}
-    \item Doppler-shift CSV ingestion
-    \item a two-body Euler integrator for star--planet motion
-    \item a geometric-mean search over planet mass and orbital radius
-\end{enumerate}
+\section{Methods}
 
-That approach had educational value and preserved the physical intuition of a
-star wobbling around the system barycenter. However, it also mixed the expensive
-numerical integrator directly into the fitting loop, depended on missing local
-CSV files, and was difficult to reproduce or extend.
+\subsection{Doppler shift and radial velocity}
 
-\section{Modernized Pipeline}
-
-The rebuild keeps the same scientific story while separating \emph{modeling},
-\emph{optimization}, and \emph{visualization}.
-
-\subsection{Doppler Conversion}
-
-The archived files store Doppler shift $z$ instead of radial velocity $v$. The
-package converts between the two using the relativistic relation
+Spectroscopic observations may be reported as a fractional Doppler shift
+$z = \Delta\lambda/\lambda$. For a source with line-of-sight speed $v$
+relative to the observer, the relativistic Doppler formula is
 \begin{equation}
-z = \sqrt{\frac{1 + \beta}{1 - \beta}} - 1,
+z = \sqrt{\frac{1+\beta}{1-\beta}} - 1,
 \qquad
 \beta = \frac{v}{c},
 \end{equation}
-which can be inverted to recover stellar radial velocity from each observed
-shift value.
-
-\subsection{Keplerian Radial-Velocity Model}
-
-For fitting, the rebuilt code uses an analytic single-planet Keplerian model:
+where $c$ is the speed of light \citep{lindegren2003fundamental}. Inverting
+this relation yields
 \begin{equation}
-v_r(t) = \gamma + K \left[\cos(\omega + \nu(t)) + e \cos(\omega)\right],
+v = c\,\frac{(1+z)^2 - 1}{(1+z)^2 + 1}.
 \end{equation}
-where $K$ is the radial-velocity semi-amplitude, $P$ is the orbital period,
-$e$ is eccentricity, $\omega$ is the argument of periastron, $t_0$ is the
-periastron time, and $\gamma$ is the system velocity offset. The true anomaly
-$\nu(t)$ is recovered by solving Kepler's equation for the eccentric anomaly and
-then transforming into orbital phase.
+Throughout, positive $v$ denotes recession.
 
-\subsection{Optimization Strategy}
+\subsection{Keplerian radial-velocity model}
 
-Instead of evaluating a numerical integrator at every candidate point, the new
-pipeline:
-\begin{enumerate}
-    \item performs a global search with \texttt{scipy.optimize.differential\_evolution}
-    \item refines the best candidate with \texttt{scipy.optimize.least\_squares}
-    \item derives a representative planet mass and semi-major axis from the fitted
-    semi-amplitude and stellar mass under an edge-on assumption
-\end{enumerate}
+We adopt the standard single-planet RV model
+\citep{wright2009efficient,murray2010keplerian}:
+\begin{equation}
+v_r(t)
+=
+\gamma
++
+K\Bigl[
+\cos\bigl(\omega + \nu(t)\bigr)
++
+e\cos\omega
+\Bigr],
+\label{eq:rv}
+\end{equation}
+where $\gamma$ is the systemic velocity, $K$ is the RV semi-amplitude,
+$e$ is the eccentricity, $\omega$ is the argument of periastron, and
+$\nu(t)$ is the true anomaly.
 
-This split makes fitting fast enough to run as a repeatable example while still
-preserving a physically interpretable orbit plot.
+The true anomaly is obtained from the mean anomaly
+\begin{equation}
+M = \frac{2\pi}{P}\,(t - t_0)
+\end{equation}
+by solving Kepler's equation
+\begin{equation}
+E - e\sin E = M
+\end{equation}
+for the eccentric anomaly $E$, then converting
+\begin{equation}
+\tan\frac{\nu}{2}
+=
+\sqrt{\frac{1+e}{1-e}}\,
+\tan\frac{E}{2}
+\end{equation}
+\citep{murray1999solar}.
 
-\subsection{Orbit Visualization}
+For an edge-on orbit ($\sin i = 1$), the semi-amplitude is related to the
+component masses and period by
+\begin{equation}
+K
+=
+\left(\frac{2\pi G}{P}\right)^{1/3}
+\frac{M_p}{(M_\star + M_p)^{2/3}}
+\frac{1}{\sqrt{1-e^2}},
+\label{eq:K}
+\end{equation}
+where $G$ is Newton's constant. Given $K$, $P$, $e$, and $M_\star$, we solve
+Eq.~\eqref{eq:K} for $M_p$ and obtain the semi-major axis from Kepler's third
+law,
+\begin{equation}
+a^3 = \frac{G(M_\star + M_p)}{4\pi^2}\,P^2.
+\end{equation}
+When $\sin i < 1$, the mass inferred from Eq.~\eqref{eq:K} is a lower limit
+$M_p\sin i$.
 
-After fitting, the project constructs barycentric initial conditions and
-integrates a two-body orbit using the velocity Verlet method. The resulting
-orbit panel is not used for optimization; it is a clean post-fit visualization
-that keeps the original project's dynamical flavor without the numerical drift
-of the Euler loop.
+\subsection{Parameter estimation}
 
-\section{Datasets}
+Let $\{t_j, v_j, \sigma_j\}$ denote the observed times, radial velocities, and
+uncertainties. We minimize the weighted residual sum of squares
+\begin{equation}
+\chi^2(\boldsymbol{\theta})
+=
+\sum_j
+\left(
+\frac{v_j - v_r(t_j;\boldsymbol{\theta})}{\sigma_j}
+\right)^2,
+\end{equation}
+with parameter vector
+$\boldsymbol{\theta} = (K, P, e, \omega, t_0, \gamma)$.
 
-\subsection{Synthetic Validation}
+Because $\chi^2$ is nonconvex in the orbital elements, we first perform a
+global search with differential evolution
+\citep{storn1997differential,virtanen2020scipy}, which maintains a population
+of candidate solutions and updates them by mutation and crossover. The best
+candidate is then polished with a bounded nonlinear least-squares solver
+\citep{virtanen2020scipy}. Search bounds are constructed from the observation
+baseline and the observed velocity span, with $0 \le e \le 0.85$ to avoid
+near-parabolic degeneracies.
 
-The repository now ships a synthetic-data generator. A reference system with
-known $K$, $P$, $e$, stellar mass, and planet mass is sampled at irregular
-observation times, corrupted with measurement noise, and then passed through the
-same fitting pipeline. This gives a reproducible benchmark for validating the
-rebuild.
+\subsection{Orbit visualization}
 
-\subsection{Recovered Observation Data}
+After fitting, we construct barycentric initial conditions consistent with the
+derived $a$, $e$, and component masses, and integrate the Newtonian two-body
+problem with the velocity Verlet algorithm \citep{verlet1967computer}. This
+integration is used solely for visualization of the reflex orbit; it is not
+part of the likelihood evaluation.
 
-The archived real observations are now versioned under
-\texttt{data/archived\_observations/}. The stellar mass catalog is:
-\begin{center}
-\begin{tabular}{l l}
-\texttt{star0}: 1.11 $M_{\odot}$ & \texttt{star2}: 2.30 $M_{\odot}$ \\
-\texttt{star1}: 1.39 $M_{\odot}$ & \texttt{star3}: 1.34 $M_{\odot}$ \\
-\end{tabular}
-\end{center}
+\section{Data}
 
-The rebuilt example script currently demonstrates \texttt{star0}, matching the
-legacy prototype's original short test case and providing a compact real-data
-sanity check for the new package.
+\subsection{Synthetic validation set}
+
+To quantify recovery accuracy we generate a synthetic RV series for a
+Jupiter-class companion around a $\sim 1.08\,M_\odot$ star with planted
+parameters
+\begin{equation*}
+P = 147.5\,\mathrm{d},\quad
+K \approx 30.5\,\mathrm{m\,s^{-1}},\quad
+e = 0.19,\quad
+M_p = 0.82\,M_J.
+\end{equation*}
+Observation times are drawn irregularly over a $420\,\mathrm{d}$ window.
+Independent Gaussian noise of standard deviation
+$2.2\,\mathrm{m\,s^{-1}}$ and an additional jitter term of
+$0.7\,\mathrm{m\,s^{-1}}$ are added to each sample.
+
+\subsection{Observational Doppler series}
+
+We also analyze an observational Doppler-shift time series for a
+$1.11\,M_\odot$ host (dataset \texttt{star0}). Times are recorded in seconds
+and converted to days; Doppler shifts are converted to radial velocities as
+described above. In the absence of published per-point uncertainties we adopt
+a uniform $\sigma = 1\,\mathrm{m\,s^{-1}}$ for weighting. Three additional
+hosts with stellar masses $1.39$, $2.30$, and $1.34\,M_\odot$ are available in
+the same catalog for follow-up analysis.
 
 \section{Results}
 
-\subsection{Synthetic Benchmark}
+\subsection{Synthetic recovery}
 
-For the synthetic showcase system, the recovered fit is close to the planted
-truth:
-\begin{itemize}
-    \item truth: $P = 147.5$ days, $K = 30.5$ m/s, $M_p = 0.82~M_J$, $e = 0.19$
-    \item recovered: $P = 147.16$ days, $K = 31.35$ m/s, $M_p = 0.836~M_J$, $e = 0.221$
-    \item residual RMS: 2.11 m/s
-\end{itemize}
+Table~\ref{tab:synthetic} compares planted and recovered parameters. The
+period and semi-amplitude are recovered to within $\sim 3\%$, and the residual
+RMS is $2.11\,\mathrm{m\,s^{-1}}$, consistent with the injected noise level.
+Figure~\ref{fig:synthetic} shows the observations, the best-fit Keplerian
+curve, the ground-truth curve, and the corresponding barycentric orbit.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{figures/rv_fit_preview.png}
-    \caption{Synthetic validation example included in the rebuilt repository. The
-    left panel shows noisy radial-velocity samples with the recovered Keplerian fit;
-    the right panel shows the corresponding barycentric orbit rendered with the
-    velocity Verlet integrator.}
-\end{figure}
-
-\subsection{Recovered \texttt{star0} Fit}
-
-Running the new real-data example on \texttt{star0} yields:
-\begin{itemize}
-    \item stellar mass: $1.11~M_{\odot}$
-    \item fitted period: 4.269 days
-    \item fitted semi-amplitude: 56.694 m/s
-    \item fitted eccentricity: 0.002
-    \item derived planet mass: $0.485~M_J$
-    \item residual RMS: 5.23 m/s
-\end{itemize}
+\begin{table}[H]
+\centering
+\caption{Synthetic validation: planted truth versus recovered fit.}
+\label{tab:synthetic}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Quantity & Truth & Fit & Relative error \\
+\midrule
+$P$ (d) & 147.5 & 147.16 & $0.2\%$ \\
+$K$ ($\mathrm{m\,s^{-1}}$) & 30.51 & 31.35 & $2.8\%$ \\
+$e$ & 0.190 & 0.221 & --- \\
+$M_p$ ($M_J$) & 0.820 & 0.836 & $2.0\%$ \\
+RMS ($\mathrm{m\,s^{-1}}$) & --- & 2.11 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{figures/archived_star0_fit.png}
-    \caption{Recovered fit for the archived \texttt{star0} dataset. The nearly
-    circular best fit and short orbital period make this a clean real-data example
-    for the rebuilt package.}
+\centering
+\includegraphics[width=\textwidth]{figures/rv_fit_preview.png}
+\caption{Synthetic radial-velocity fit. Left: noisy observations (points),
+best-fit Keplerian model (solid), and planted ground truth (dashed). Right:
+barycentric star--planet orbit integrated with velocity Verlet from the fitted
+elements.}
+\label{fig:synthetic}
 \end{figure}
 
-\section{Repository Additions}
+\subsection{Observational fit for \texttt{star0}}
 
-The rewrite now includes:
-\begin{itemize}
-    \item packaged source code under \texttt{src/exoplanet\_est/}
-    \item synthetic and real-data example scripts
-    \item archived CSVs under \texttt{data/archived\_observations/}
-    \item documentation figures under \texttt{docs/figures/}
-    \item this \LaTeX{} report as a companion artifact
-\end{itemize}
+Fitting the \texttt{star0} Doppler series yields a short-period, nearly
+circular solution (Table~\ref{tab:star0}; Fig.~\ref{fig:star0}). The low
+eccentricity and coherent phase coverage over $\sim 14\,\mathrm{d}$ produce a
+stable global minimum. Under the edge-on assumption the companion mass is
+$M_p\sin i \approx 0.49\,M_J$ at $a \approx 0.053\,\mathrm{AU}$.
 
-\section{Limitations and Next Steps}
+\begin{table}[H]
+\centering
+\caption{Best-fit Keplerian parameters for the \texttt{star0} Doppler series
+($M_\star = 1.11\,M_\odot$).}
+\label{tab:star0}
+\begin{tabular}{@{}lc@{}}
+\toprule
+Parameter & Value \\
+\midrule
+$P$ (d) & 4.269 \\
+$K$ ($\mathrm{m\,s^{-1}}$) & 56.694 \\
+$e$ & 0.002 \\
+$\gamma$ ($\mathrm{m\,s^{-1}}$) & 9.398 \\
+$a$ (AU) & 0.053 \\
+$M_p\sin i$ ($M_J$) & 0.485 \\
+RMS ($\mathrm{m\,s^{-1}}$) & 5.23 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-The current package intentionally focuses on the clean single-planet case. A few
-natural extensions would be:
-\begin{itemize}
-    \item support explicit measurement uncertainties and instrument offsets when
-    available
-    \item add periodogram-based initialization for the longest archival datasets
-    \item extend the model to multiple planets or Bayesian posterior estimation
-    \item convert the draw.io design artifacts into polished report figures if a
-    future revision needs more visual explanation of the original search space
-\end{itemize}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/archived_star0_fit.png}
+\caption{Keplerian fit to the \texttt{star0} Doppler observations. Left:
+radial-velocity time series and best-fit model. Right: corresponding
+barycentric orbit.}
+\label{fig:star0}
+\end{figure}
 
-\section{Reproduction}
+\section{Discussion}
 
-The core commands are:
-\begin{verbatim}
-uv sync
-MPLBACKEND=Agg uv run python examples/fit_synthetic.py --save outputs/rv_fit_preview.png
-MPLBACKEND=Agg uv run python examples/fit_archived_star.py --star-index 0 \
-  --save outputs/archived_star0_fit.png
-latexmk -pdf -cd docs/exoplanet_showcase_report.tex
-\end{verbatim}
+The synthetic experiment confirms that differential evolution followed by
+local refinement is sufficient to recover the dominant Keplerian parameters
+when the noise is Gaussian and the sampling covers multiple orbital cycles
+\citep{storn1997differential,wright2009efficient}. Eccentricity is the most
+weakly constrained element in our synthetic run, as expected when the
+signal-to-noise ratio is modest and the true $e$ is moderate
+\citep{ford2005quantifying}.
 
-\noindent
-Together, these commands reproduce the synthetic benchmark, the archived
-\texttt{star0} fit, and the compiled report.
+For \texttt{star0}, the near-zero eccentricity and short period are
+characteristic of hot-Jupiter systems first revealed by RV surveys
+\citep{mayor1995jupiter}. Several caveats apply. First, the adopted
+uncertainties are uniform and may not reflect the true error budget, so the
+formal $\chi^2$ should not be over-interpreted. Second, the mass we report is
+$M_p\sin i$; without an independent inclination constraint the true mass may
+be larger. Third, the model assumes a single planet and a constant systemic
+velocity, omitting stellar activity, instrumental offsets, and additional
+companions \citep{fischer2014exoplanet}.
+
+Natural extensions include periodogram-based period initialization
+\citep{cumming2004detectability}, multi-planet Keplerian models
+\citep{wright2009efficient}, and Bayesian posterior sampling for full
+uncertainty quantification \citep{ford2005quantifying}.
+
+\section{Conclusions}
+
+We have described a Keplerian radial-velocity pipeline for single-planet
+parameter estimation. The method combines an analytic RV forward model,
+differential-evolution global search, and least-squares refinement, with
+derived planet mass and semi-major axis under the edge-on limit. Synthetic
+tests recover $K$ and $P$ to within a few percent. Application to an
+observational Doppler series yields a coherent short-period, low-eccentricity
+solution. The accompanying open-source implementation provides a reproducible
+basis for further methodological development.
+
+\section*{Software}
+
+The analysis is implemented in Python using NumPy, SciPy
+\citep{virtanen2020scipy}, and Matplotlib. Source code and example scripts are
+available in the project repository accompanying this manuscript.
+
+\bibliographystyle{unsrtnat}
+\bibliography{references}
 
 \end{document}

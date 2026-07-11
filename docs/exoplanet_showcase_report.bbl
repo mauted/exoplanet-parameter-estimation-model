@@ -1,0 +1,89 @@
+\begin{thebibliography}{12}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Mayor and Queloz(1995)]{mayor1995jupiter}
+Michel Mayor and Didier Queloz.
+\newblock A {Jupiter}-mass companion to a solar-type star.
+\newblock \emph{Nature}, 378\penalty0 (6555):\penalty0 355--359, 1995.
+\newblock \doi{10.1038/378355a0}.
+
+\bibitem[Marcy and Butler(1996)]{marcy1996planet}
+Geoffrey~W. Marcy and R.~Paul Butler.
+\newblock A planetary companion to 70 {Virginis}.
+\newblock \emph{The Astrophysical Journal Letters}, 464:\penalty0 L147--L151,
+  1996.
+\newblock \doi{10.1086/310096}.
+
+\bibitem[Wright and Howard(2009)]{wright2009efficient}
+J.~T. Wright and A.~W. Howard.
+\newblock Efficient fitting of multiplanet {Keplerian} models to radial
+  velocity and astrometry data.
+\newblock \emph{The Astrophysical Journal Supplement Series}, 182\penalty0
+  (1):\penalty0 205--215, 2009.
+\newblock \doi{10.1088/0067-0049/182/1/205}.
+
+\bibitem[Cumming(2004)]{cumming2004detectability}
+Andrew Cumming.
+\newblock Detectability of extrasolar planets in radial velocity surveys.
+\newblock \emph{Monthly Notices of the Royal Astronomical Society},
+  354\penalty0 (4):\penalty0 1165--1176, 2004.
+\newblock \doi{10.1111/j.1365-2966.2004.08275.x}.
+
+\bibitem[Fischer et~al.(2014)]{fischer2014exoplanet}
+Debra~A. Fischer et~al.
+\newblock Exoplanet detection techniques.
+\newblock \emph{Protostars and Planets VI}, pages 715--737, 2014.
+\newblock \doi{10.2458/azu_uapress_9780816531240-ch031}.
+
+\bibitem[Murray and Dermott(1999)]{murray1999solar}
+Carl~D. Murray and Stanley~F. Dermott.
+\newblock \emph{Solar System Dynamics}.
+\newblock Cambridge University Press, 1999.
+\newblock \doi{10.1017/CBO9781139174817}.
+
+\bibitem[Murray and Correia(2010)]{murray2010keplerian}
+C.~D. Murray and A.~C.~M. Correia.
+\newblock {Keplerian} orbits and dynamics of exoplanets.
+\newblock In Sara Seager, editor, \emph{Exoplanets}, pages 15--23. University
+  of Arizona Press, 2010.
+
+\bibitem[Ford(2005)]{ford2005quantifying}
+Eric~B. Ford.
+\newblock Quantifying the uncertainty in the orbits of extrasolar planets.
+\newblock \emph{The Astronomical Journal}, 129\penalty0 (3):\penalty0
+  1706--1717, 2005.
+\newblock \doi{10.1086/427962}.
+
+\bibitem[Storn and Price(1997)]{storn1997differential}
+Rainer Storn and Kenneth Price.
+\newblock Differential evolution -- a simple and efficient heuristic for global
+  optimization over continuous spaces.
+\newblock \emph{Journal of Global Optimization}, 11\penalty0 (4):\penalty0
+  341--359, 1997.
+\newblock \doi{10.1023/A:1008202821328}.
+
+\bibitem[Lindegren and Dravins(2003)]{lindegren2003fundamental}
+L.~Lindegren and D.~Dravins.
+\newblock The fundamental definition of ``radial velocity''.
+\newblock \emph{Astronomy \& Astrophysics}, 401:\penalty0 1185--1201, 2003.
+\newblock \doi{10.1051/0004-6361:20030181}.
+
+\bibitem[Virtanen et~al.(2020)]{virtanen2020scipy}
+Pauli Virtanen et~al.
+\newblock {SciPy} 1.0: fundamental algorithms for scientific computing in
+  {Python}.
+\newblock \emph{Nature Methods}, 17:\penalty0 261--272, 2020.
+\newblock \doi{10.1038/s41592-019-0686-2}.
+
+\bibitem[Verlet(1967)]{verlet1967computer}
+Loup Verlet.
+\newblock Computer ``experiments'' on classical fluids. {I}. {Thermodynamical}
+  properties of {Lennard-Jones} molecules.
+\newblock \emph{Physical Review}, 159\penalty0 (1):\penalty0 98--103, 1967.
+\newblock \doi{10.1103/PhysRev.159.98}.
+
+\end{thebibliography}
