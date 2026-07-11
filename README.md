@@ -2,7 +2,7 @@
 
 A showcase-ready radial-velocity fitting project for estimating single-planet orbital parameters from Doppler observations.
 
-![Radial velocity fit evolution](docs/archived_star3_fit_evolution.gif)
+![Radial velocity fit evolution](preview.gif)
 
 ## What it does
 
