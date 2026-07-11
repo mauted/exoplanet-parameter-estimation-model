@@ -2,7 +2,7 @@
 
 A showcase-ready radial-velocity fitting project for estimating single-planet orbital parameters from Doppler observations.
 
-![Radial velocity fit preview](docs/figures/rv_fit_preview.png)
+![Radial velocity fit evolution](docs/archived_star3_fit_evolution.gif)
 
 ## What it does
 
@@ -12,6 +12,7 @@ This rewrite replaces the original script-based prototype with a small Python pa
 - fits orbital parameters with differential evolution followed by local least-squares polish
 - derives an approximate planet mass and semi-major axis from the recovered fit
 - renders a two-panel figure with the RV fit and a velocity-Verlet orbit visualization
+- can export a GIF of the best-so-far model evolving across optimizer generations
 - generates reproducible synthetic datasets so the project runs without external CSVs
 
 The fitting flow is:
@@ -27,13 +28,15 @@ The fitting flow is:
 ```bash
 uv sync
 MPLBACKEND=Agg uv run python examples/fit_synthetic.py --save outputs/rv_fit_preview.png
+MPLBACKEND=Agg uv run python examples/export_fit_evolution_gif.py \
+  --star-index 3 --save docs/archived_star3_fit_evolution.gif
 ```
 
-That command writes:
+Those commands write:
 
 - `outputs/rv_fit_preview.png`
 - `outputs/synthetic_rv_dataset.csv`
-
+- `docs/archived_star3_fit_evolution.gif`
 ## Archived Observation Data
 
 The observational Doppler files live under `data/archived_observations/`:
@@ -81,8 +84,10 @@ from seconds to days and returns the matching stellar mass.
 - `examples/fit_archived_star.py` - archived real-data fitting example
 - `examples/export_paper_figures.py` - regenerate paper CSVs / print PDFs / dark PNGs
   (including the synthetic optimizer convergence trace)
+- `examples/export_fit_evolution_gif.py` - animate best-so-far RV/orbit frames over DE generations
 - `docs/exoplanet_showcase_report.tex` - companion LaTeX write-up
 - `docs/figure_macros.tex` - PGFPlots macros used by the paper
+- `docs/archived_star3_fit_evolution.gif` - showcase animation used on the README / project card
 
 ## Companion report
 

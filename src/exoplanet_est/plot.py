@@ -16,7 +16,13 @@ from exoplanet_est.keplerian import (
     true_anomaly_from_eccentric_anomaly,
 )
 from exoplanet_est.nbody import barycentric_state_from_orbit, integrate_two_body
-from exoplanet_est.optimize import RVFitResult, evaluate_on_dense_grid
+from exoplanet_est.optimize import (
+    OptimizationHistory,
+    OptimizationTracePoint,
+    RVFitResult,
+    evaluate_on_dense_grid,
+    fit_result_from_trace_point,
+)
 
 
 @dataclass(frozen=True)
@@ -154,6 +160,7 @@ def build_plot_series(
     fit_result: RVFitResult,
     *,
     truth: ShowcaseTruth | None = None,
+    n_orbit_steps: int = 2000,
 ) -> PlotSeries:
     """Build the arrays used by Matplotlib and PGFPlots exporters."""
 
@@ -165,6 +172,7 @@ def build_plot_series(
     orbit = _orbit_simulation(
         fit_result,
         reference_day=float(dataset.times_days.min()),
+        n_steps=n_orbit_steps,
     )
     truth_curve = None
     if truth is not None:
@@ -258,11 +266,19 @@ def plot_fit_summary(
     truth: ShowcaseTruth | None = None,
     title: str = "Exoplanet Parameter Estimation",
     theme: str | PlotTheme = "dark",
+    status_line: str | None = None,
+    n_orbit_steps: int = 2000,
+    fixed_limits: dict[str, tuple[float, float]] | None = None,
 ):
     """Create the 16:9 showcase figure."""
 
     theme = THEMES[theme] if isinstance(theme, str) else theme
-    series = build_plot_series(dataset, fit_result, truth=truth)
+    series = build_plot_series(
+        dataset,
+        fit_result,
+        truth=truth,
+        n_orbit_steps=n_orbit_steps,
+    )
 
     plt.style.use("default")
     fig, axes = plt.subplots(1, 2, figsize=(16, 9))
@@ -356,6 +372,16 @@ def plot_fit_summary(
         for text in legend.get_texts():
             text.set_color(theme.text)
 
+    if fixed_limits is not None:
+        if "rv_x" in fixed_limits:
+            axes[0].set_xlim(*fixed_limits["rv_x"])
+        if "rv_y" in fixed_limits:
+            axes[0].set_ylim(*fixed_limits["rv_y"])
+        if "orbit_x" in fixed_limits:
+            axes[1].set_xlim(*fixed_limits["orbit_x"])
+        if "orbit_z" in fixed_limits:
+            axes[1].set_ylim(*fixed_limits["orbit_z"])
+
     metrics = [
         f"P = {fit_result.parameters.period_days:.1f} d",
         f"K = {fit_result.parameters.semi_amplitude_ms:.1f} m/s",
@@ -369,10 +395,12 @@ def plot_fit_summary(
         "   |   ".join(metrics[:4]),
         "   |   ".join(metrics[4:]),
     ]
+    if status_line:
+        metric_lines.append(status_line)
     fig.suptitle(title, fontsize=22, fontweight="bold", color=theme.text)
     fig.text(
         0.5,
-        0.07,
+        0.055 if status_line else 0.07,
         "\n".join(metric_lines),
         ha="center",
         va="center",
@@ -381,6 +409,140 @@ def plot_fit_summary(
         color=theme.muted_text,
     )
     return fig, axes, series
+
+
+def select_history_frames(
+    history: OptimizationHistory,
+    *,
+    max_frames: int = 48,
+) -> list[OptimizationTracePoint]:
+    """Pick a compact subsequence of optimizer snapshots for animation."""
+
+    points = list(history.points)
+    if len(points) <= max_frames:
+        return points
+
+    # Favor early generations where χ² changes quickly, always keep the final polish.
+    sample_count = max_frames - 1
+    positions = np.unique(
+        np.round(np.geomspace(1, len(points) - 1, num=sample_count)).astype(int) - 1
+    )
+    selected = [points[index] for index in positions]
+    if points[-1] not in selected:
+        selected.append(points[-1])
+    return selected
+
+
+def fixed_limits_from_fit(
+    dataset: RadialVelocityDataset,
+    fit_result: RVFitResult,
+    *,
+    n_orbit_steps: int = 400,
+) -> dict[str, tuple[float, float]]:
+    """Freeze axis ranges from the final fit so the GIF does not jump around."""
+
+    series = build_plot_series(dataset, fit_result, n_orbit_steps=n_orbit_steps)
+    rv_pad = 0.08 * max(
+        float(np.ptp(series.radial_velocity_ms)),
+        float(np.ptp(series.model_velocity_ms)),
+        1.0,
+    )
+    rv_ymin = min(float(series.radial_velocity_ms.min()), float(series.model_velocity_ms.min()))
+    rv_ymax = max(float(series.radial_velocity_ms.max()), float(series.model_velocity_ms.max()))
+    orbit_x = np.concatenate([series.planet_x_au, series.star_x_au])
+    orbit_z = np.concatenate([series.planet_z_au, series.star_z_au])
+    orbit_pad = 0.08 * max(float(np.ptp(orbit_x)), float(np.ptp(orbit_z)), 0.1)
+    return {
+        "rv_x": (float(dataset.times_days.min()), float(dataset.times_days.max())),
+        "rv_y": (rv_ymin - rv_pad, rv_ymax + rv_pad),
+        "orbit_x": (float(orbit_x.min()) - orbit_pad, float(orbit_x.max()) + orbit_pad),
+        "orbit_z": (float(orbit_z.min()) - orbit_pad, float(orbit_z.max()) + orbit_pad),
+    }
+
+
+def render_fit_evolution_gif(
+    dataset: RadialVelocityDataset,
+    history: OptimizationHistory,
+    *,
+    star_mass_kg: float,
+    output_path: str | Path,
+    title: str = "Radial Velocity Fit Evolution",
+    theme: str | PlotTheme = "dark",
+    max_frames: int = 48,
+    frame_duration_ms: int = 120,
+    final_hold_frames: int = 12,
+    n_orbit_steps: int = 400,
+) -> Path:
+    """Render a dark-theme GIF of the best-so-far fit across optimizer generations."""
+
+    import io
+
+    from PIL import Image
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    frames = select_history_frames(history, max_frames=max_frames)
+    final_result = fit_result_from_trace_point(
+        frames[-1],
+        star_mass_kg=star_mass_kg,
+        dataset=dataset,
+    )
+    limits = fixed_limits_from_fit(
+        dataset,
+        final_result,
+        n_orbit_steps=n_orbit_steps,
+    )
+
+    images: list[Image.Image] = []
+    for point in frames:
+        snapshot = fit_result_from_trace_point(
+            point,
+            star_mass_kg=star_mass_kg,
+            dataset=dataset,
+        )
+        fig, _, _ = plot_fit_summary(
+            dataset,
+            snapshot,
+            title=title,
+            theme=theme,
+            status_line=_status_line(point),
+            n_orbit_steps=n_orbit_steps,
+            fixed_limits=limits,
+        )
+        buffer = io.BytesIO()
+        fig.savefig(
+            buffer,
+            format="png",
+            dpi=110,
+            facecolor=fig.get_facecolor(),
+            bbox_inches="tight",
+        )
+        plt.close(fig)
+        buffer.seek(0)
+        images.append(Image.open(buffer).convert("RGB"))
+
+    if not images:
+        raise ValueError("No frames available to render a fit-evolution GIF.")
+
+    held = images + [images[-1]] * final_hold_frames
+    held[0].save(
+        output_path,
+        save_all=True,
+        append_images=held[1:],
+        duration=frame_duration_ms,
+        loop=0,
+        optimize=True,
+    )
+    return output_path
+
+
+def _status_line(point: OptimizationTracePoint) -> str:
+    stage = "DE" if point.stage == "de" else "LS polish"
+    return (
+        f"{stage}  |  generation {point.generation}  |  "
+        f"chi^2 = {point.chi2:.1f}  |  RMS = {point.residual_rms_ms:.2f} m/s"
+    )
 
 
 def save_figure(fig, path: str | Path) -> None:

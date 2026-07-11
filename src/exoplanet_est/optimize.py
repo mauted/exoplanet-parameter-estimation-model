@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, least_squares
 
+from exoplanet_est.constants import DAY_IN_SECONDS, G
 from exoplanet_est.data import RadialVelocityDataset
 from exoplanet_est.keplerian import (
     OrbitalParameters,
@@ -274,6 +275,61 @@ def fit_radial_velocity_curve(
         success=bool(global_result.success and local_result.success),
         optimizer_message=f"{global_result.message}; {local_result.message}",
         history=history,
+    )
+
+
+def fit_result_from_trace_point(
+    point: OptimizationTracePoint,
+    *,
+    star_mass_kg: float,
+    dataset: RadialVelocityDataset | None = None,
+) -> RVFitResult:
+    """Rebuild an RVFitResult snapshot from a recorded optimizer trace point."""
+
+    parameters = point.parameters
+    if dataset is None:
+        model_velocity = np.asarray([], dtype=float)
+        residual_rms = point.residual_rms_ms
+        weighted_sse = point.chi2
+    else:
+        model_velocity = radial_velocity_curve(parameters, dataset.times_days)
+        residuals = dataset.radial_velocity_ms - model_velocity
+        residual_rms = float(np.sqrt(np.mean(residuals**2)))
+        weighted_sse = float(np.sum((residuals / dataset.uncertainty_ms) ** 2))
+
+    try:
+        planet_mass_kg = estimate_planet_mass(
+            star_mass_kg,
+            parameters.semi_amplitude_ms,
+            parameters.period_days,
+            parameters.eccentricity,
+        )
+    except (RuntimeError, ValueError):
+        # Fall back to the Mp << Mstar approximation for early unstable iterates.
+        period_seconds = parameters.period_days * DAY_IN_SECONDS
+        factor = (period_seconds / (2.0 * np.pi * G)) ** (1.0 / 3.0)
+        planet_mass_kg = (
+            parameters.semi_amplitude_ms
+            * star_mass_kg ** (2.0 / 3.0)
+            * np.sqrt(max(1.0 - parameters.eccentricity**2, 1e-8))
+            * factor
+        )
+
+    semi_major_axis_m = semi_major_axis_from_period(
+        parameters.period_days,
+        star_mass_kg + planet_mass_kg,
+    )
+    return RVFitResult(
+        parameters=parameters,
+        model_velocity_ms=model_velocity,
+        residual_rms_ms=residual_rms,
+        weighted_sse=weighted_sse,
+        star_mass_kg=star_mass_kg,
+        planet_mass_kg=float(planet_mass_kg),
+        semi_major_axis_m=semi_major_axis_m,
+        success=True,
+        optimizer_message=f"trace:{point.stage}:{point.generation}",
+        history=None,
     )
 
 
