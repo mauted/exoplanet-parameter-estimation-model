@@ -2,7 +2,7 @@
 
 A showcase-ready radial-velocity fitting project for estimating single-planet orbital parameters from Doppler observations.
 
-![Radial velocity fit preview](docs/rv_fit_preview.png)
+![Radial velocity fit preview](docs/figures/rv_fit_preview.png)
 
 ## What it does
 
@@ -76,10 +76,12 @@ from seconds to days and returns the matching stellar mass.
 - `src/exoplanet_est/optimize.py` - global + local fitting pipeline
 - `src/exoplanet_est/nbody.py` - velocity Verlet orbit integrator
 - `src/exoplanet_est/data.py` - CSV loader and synthetic dataset generation
-- `src/exoplanet_est/plot.py` - preview figure creation
+- `src/exoplanet_est/plot.py` - dark/print-themed figure creation and CSV export
 - `examples/fit_synthetic.py` - end-to-end showcase demo
 - `examples/fit_archived_star.py` - archived real-data fitting example
+- `examples/export_paper_figures.py` - regenerate paper CSVs / print PDFs / dark PNGs
 - `docs/exoplanet_showcase_report.tex` - companion LaTeX write-up
+- `docs/figure_macros.tex` - PGFPlots macros used by the paper
 
 ## Companion report
 
@@ -89,6 +91,18 @@ A scientific write-up is included at `docs/exoplanet_showcase_report.pdf`
 (`[1]`, `[2]`, …), which is convenient for an arXiv preprint. The paper
 presents the Keplerian RV model, fitting method, synthetic validation, and
 observational results with canonical literature citations.
+
+Paper figures are native PGFPlots plots driven by CSV tables under
+`docs/figures/plotdata/`. Regenerate everything with:
+
+```bash
+MPLBACKEND=Agg uv run python examples/export_paper_figures.py
+latexmk -pdf -cd docs/exoplanet_showcase_report.tex
+```
+
+That export also writes light-theme vector PDFs in `docs/figures/` and dark-theme
+PNGs for the website / README preview. Use `--theme dark` or `--theme print` on
+the fit examples when saving a single figure.
 
 ## Notes
 

@@ -46,6 +46,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Display the Matplotlib figure after saving it.",
     )
+    parser.add_argument(
+        "--theme",
+        choices=("dark", "print"),
+        default="dark",
+        help="Figure theme: dark for web/showcase, print for light vector paper figures.",
+    )
     return parser.parse_args()
 
 
@@ -86,10 +92,11 @@ def main() -> None:
     )
 
     output_path = args.save or Path(f"outputs/archived_star{args.star_index}_fit.png")
-    fig, _ = plot_fit_summary(
+    fig, _, _ = plot_fit_summary(
         dataset,
         fit_result,
         title=f"Archived Star {args.star_index} Radial Velocity Fit",
+        theme=args.theme,
     )
     save_figure(fig, output_path)
 

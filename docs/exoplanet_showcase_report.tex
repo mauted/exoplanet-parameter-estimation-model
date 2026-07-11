@@ -4,9 +4,11 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage[numbers,sort&compress]{natbib}
-\usepackage{hyperref}
 \usepackage{float}
 \usepackage{siunitx}
+\input{figure_macros}
+\usepackage[hypertexnames=false]{hyperref}
+\usepackage[all]{hypcap}
 
 \hypersetup{
   colorlinks=true,
@@ -246,15 +248,11 @@ RMS ($\mathrm{m\,s^{-1}}$) & --- & 2.11 & --- \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{figures/rv_fit_preview.png}
-\caption{Synthetic radial-velocity fit. Left: noisy observations (points),
+\PaperFitFigureWithTruth{rv_fit_preview}{%
+Synthetic radial-velocity fit. Left: noisy observations (points),
 best-fit Keplerian model (solid), and planted ground truth (dashed). Right:
 barycentric star--planet orbit integrated with velocity Verlet from the fitted
-elements.}
-\label{fig:synthetic}
-\end{figure}
+elements.}{fig:synthetic}
 
 \subsection{Observational fits for \texttt{star0}--\texttt{star3}}
 
@@ -306,37 +304,21 @@ RMS ($\mathrm{m\,s^{-1}}$) & 5.23 & 313.9 & 14.36 & 8.50 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{figures/archived_star0_fit.png}
-\caption{Keplerian fit to the \texttt{star0} Doppler observations. Left:
+\PaperFitFigure{archived_star0_fit}{%
+Keplerian fit to the \texttt{star0} Doppler observations. Left:
 radial-velocity time series and best-fit model. Right: corresponding
-barycentric orbit.}
-\label{fig:star0}
-\end{figure}
+barycentric orbit.}{fig:star0}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{figures/archived_star1_fit.png}
-\caption{Best single-Keplerian fit to \texttt{star1}. The large residual RMS
+\PaperFitFigure{archived_star1_fit}{%
+Best single-Keplerian fit to \texttt{star1}. The large residual RMS
 indicates that this series is not well described by a single companion under
-the present model assumptions.}
-\label{fig:star1}
-\end{figure}
+the present model assumptions.}{fig:star1}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{figures/archived_star2_fit.png}
-\caption{Keplerian fit to the \texttt{star2} Doppler observations.}
-\label{fig:star2}
-\end{figure}
+\PaperFitFigure{archived_star2_fit}{%
+Keplerian fit to the \texttt{star2} Doppler observations.}{fig:star2}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{figures/archived_star3_fit.png}
-\caption{Keplerian fit to the \texttt{star3} Doppler observations.}
-\label{fig:star3}
-\end{figure}
+\PaperFitFigure{archived_star3_fit}{%
+Keplerian fit to the \texttt{star3} Doppler observations.}{fig:star3}
 
 \section{Discussion}
 
@@ -394,7 +376,10 @@ copies analyzed here.
 
 The analysis is implemented in Python using NumPy, SciPy
 \citep{virtanen2020scipy}, and Matplotlib. Source code and example scripts are
-available in the project repository accompanying this manuscript.
+available in the project repository accompanying this manuscript. Print figures
+in this paper are drawn natively with \textsc{PGFPlots} from CSV tables exported
+by \path{examples/export_paper_figures.py}; the same script also writes
+light-theme vector PDF copies under \path{docs/figures/}.
 
 \bibliographystyle{unsrtnat}
 \bibliography{references}

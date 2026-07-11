@@ -40,6 +40,12 @@ def parse_args() -> argparse.Namespace:
         default=12,
         help="Random seed for observation cadence and noise.",
     )
+    parser.add_argument(
+        "--theme",
+        choices=("dark", "print"),
+        default="dark",
+        help="Figure theme: dark for web/showcase, print for light vector paper figures.",
+    )
     return parser.parse_args()
 
 
@@ -80,7 +86,7 @@ def main() -> None:
         seed=args.seed,
     )
 
-    fig, _ = plot_fit_summary(
+    fig, _, _ = plot_fit_summary(
         dataset,
         fit_result,
         truth=ShowcaseTruth(
@@ -89,6 +95,7 @@ def main() -> None:
             star_mass_kg=star_mass_kg,
         ),
         title="Exoplanet Parameter Estimation from Radial Velocity",
+        theme=args.theme,
     )
     save_figure(fig, args.save)
 
