@@ -1,11 +1,11 @@
 """Utilities for exoplanet radial-velocity fitting and visualization."""
 
 from exoplanet_est.data import (
-    POLYGENCE_DATA_DIR,
+    ARCHIVED_DATA_DIR,
     RadialVelocityDataset,
     generate_synthetic_dataset,
-    load_polygence_star_dataset,
-    load_polygence_star_masses,
+    load_archived_star_dataset,
+    load_archived_star_masses,
     load_radial_velocity_csv,
     save_synthetic_dataset_csv,
 )
@@ -20,14 +20,14 @@ from exoplanet_est.optimize import RVFitResult, fit_radial_velocity_curve
 
 __all__ = [
     "OrbitalParameters",
-    "POLYGENCE_DATA_DIR",
+    "ARCHIVED_DATA_DIR",
     "RVFitResult",
     "RadialVelocityDataset",
     "estimate_planet_mass",
     "fit_radial_velocity_curve",
     "generate_synthetic_dataset",
-    "load_polygence_star_dataset",
-    "load_polygence_star_masses",
+    "load_archived_star_dataset",
+    "load_archived_star_masses",
     "load_radial_velocity_csv",
     "radial_velocity_curve",
     "save_synthetic_dataset_csv",

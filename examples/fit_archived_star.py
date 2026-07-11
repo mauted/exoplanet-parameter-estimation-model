@@ -1,4 +1,4 @@
-"""Fit one of the archived Polygence radial-velocity datasets."""
+"""Fit one of the archived radial-velocity datasets."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import Bounds
 
 from exoplanet_est.constants import MASS_JUPITER, MASS_SUN
-from exoplanet_est.data import load_polygence_star_dataset
+from exoplanet_est.data import load_archived_star_dataset
 from exoplanet_est.optimize import fit_radial_velocity_curve
 from exoplanet_est.plot import plot_fit_summary, save_figure
 
@@ -21,7 +21,7 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=0,
         choices=(0, 1, 2, 3),
-        help="Archived Polygence star index.",
+        help="Archived star index.",
     )
     parser.add_argument(
         "--save",
@@ -73,7 +73,7 @@ def bounds_for_dataset(dataset, star_index: int) -> Bounds:
 
 def main() -> None:
     args = parse_args()
-    dataset, star_mass_kg = load_polygence_star_dataset(
+    dataset, star_mass_kg = load_archived_star_dataset(
         args.star_index,
         uncertainty_ms=args.uncertainty_ms,
     )
@@ -85,11 +85,11 @@ def main() -> None:
         seed=args.star_index,
     )
 
-    output_path = args.save or Path(f"outputs/polygence_star{args.star_index}_fit.png")
+    output_path = args.save or Path(f"outputs/archived_star{args.star_index}_fit.png")
     fig, _ = plot_fit_summary(
         dataset,
         fit_result,
-        title=f"Polygence Star {args.star_index} Radial Velocity Fit",
+        title=f"Archived Star {args.star_index} Radial Velocity Fit",
     )
     save_figure(fig, output_path)
 

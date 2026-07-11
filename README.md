@@ -34,9 +34,9 @@ That command writes:
 - `outputs/rv_fit_preview.png`
 - `outputs/synthetic_rv_dataset.csv`
 
-## Archived Polygence Data
+## Archived Observation Data
 
-The original Polygence observation files now live under `data/polygence/`:
+The recovered observation files now live under `data/archived_observations/`:
 
 - `star0.csv` through `star3.csv`
 - `star-masses.csv`
@@ -44,8 +44,8 @@ The original Polygence observation files now live under `data/polygence/`:
 You can fit the recovered `star0` dataset with:
 
 ```bash
-MPLBACKEND=Agg uv run python examples/fit_polygence_star.py --star-index 0 \
-  --save outputs/polygence_star0_fit.png
+MPLBACKEND=Agg uv run python examples/fit_archived_star.py --star-index 0 \
+  --save outputs/archived_star0_fit.png
 ```
 
 That command loads Doppler shifts from the archived CSV, converts them into
@@ -62,8 +62,8 @@ Supported inputs can be either:
 
 If your file stores Doppler shift instead of velocity, pass `value_kind="doppler_shift"` to `load_radial_velocity_csv(...)`.
 
-For the archived Polygence format, use the packaged helper
-`load_polygence_star_dataset(...)`, which also converts the legacy time axis
+For the archived CSV format, use the packaged helper
+`load_archived_star_dataset(...)`, which also converts the legacy time axis
 from seconds to days and returns the matching stellar mass.
 
 ## Package layout
@@ -74,7 +74,7 @@ from seconds to days and returns the matching stellar mass.
 - `src/exoplanet_est/data.py` - CSV loader and synthetic dataset generation
 - `src/exoplanet_est/plot.py` - preview figure creation
 - `examples/fit_synthetic.py` - end-to-end showcase demo
-- `examples/fit_polygence_star.py` - archived real-data fitting example
+- `examples/fit_archived_star.py` - archived real-data fitting example
 - `docs/exoplanet_showcase_report.tex` - companion LaTeX write-up
 
 ## Companion report

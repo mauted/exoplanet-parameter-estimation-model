@@ -12,7 +12,7 @@ from exoplanet_est.constants import DAY_IN_SECONDS, MASS_SUN
 from exoplanet_est.doppler import doppler_shift_to_velocity, velocity_to_doppler_shift
 from exoplanet_est.keplerian import OrbitalParameters, radial_velocity_curve
 
-POLYGENCE_DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "polygence"
+ARCHIVED_DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "archived_observations"
 
 
 @dataclass(frozen=True)
@@ -100,25 +100,25 @@ def load_radial_velocity_csv(
     )
 
 
-def load_polygence_star_masses(path: str | Path | None = None) -> np.ndarray:
-    """Load the archived Polygence stellar mass catalog in solar masses."""
+def load_archived_star_masses(path: str | Path | None = None) -> np.ndarray:
+    """Load the archived stellar mass catalog in solar masses."""
 
-    path = Path(path) if path is not None else POLYGENCE_DATA_DIR / "star-masses.csv"
+    path = Path(path) if path is not None else ARCHIVED_DATA_DIR / "star-masses.csv"
     rows = np.genfromtxt(path, delimiter=",", skip_header=1)
     if rows.ndim == 1:
         rows = rows[None, :]
     return rows[:, 1]
 
 
-def load_polygence_star_dataset(
+def load_archived_star_dataset(
     star_index: int,
     *,
     data_dir: str | Path | None = None,
     uncertainty_ms: float = 1.0,
 ) -> tuple[RadialVelocityDataset, float]:
-    """Load one archived Polygence star dataset and return its stellar mass."""
+    """Load one archived star dataset and return its stellar mass."""
 
-    data_dir = Path(data_dir) if data_dir is not None else POLYGENCE_DATA_DIR
+    data_dir = Path(data_dir) if data_dir is not None else ARCHIVED_DATA_DIR
     dataset = load_radial_velocity_csv(
         data_dir / f"star{star_index}.csv",
         value_kind="doppler_shift",
@@ -130,9 +130,9 @@ def load_polygence_star_dataset(
         times_days=dataset.times_days,
         radial_velocity_ms=dataset.radial_velocity_ms,
         uncertainty_ms=np.full_like(dataset.times_days, uncertainty_ms, dtype=float),
-        label=f"polygence-star{star_index}",
+        label=f"archived-star{star_index}",
     )
-    star_mass_solar = load_polygence_star_masses(data_dir / "star-masses.csv")[star_index]
+    star_mass_solar = load_archived_star_masses(data_dir / "star-masses.csv")[star_index]
     return dataset, float(star_mass_solar * MASS_SUN)
 
 

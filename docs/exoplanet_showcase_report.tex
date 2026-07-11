@@ -5,7 +5,7 @@
 \usepackage{hyperref}
 \usepackage{float}
 
-\title{Exoplanet Parameter Estimation Showcase\\\large Reconstructing and Modernizing the Polygence Prototype}
+\title{Exoplanet Parameter Estimation Showcase\\\large Reconstructing and Modernizing a Legacy Prototype}
 \author{Mauricio Tedeschi}
 \date{\today}
 
@@ -14,7 +14,7 @@
 
 \begin{abstract}
 This document accompanies the rebuilt \texttt{exoplanet-parameter-estimation-model}
-project. The original Polygence archive contained a three-script prototype, four
+project. The recovered archive contained a three-script prototype, four
 real Doppler time-series CSVs, a stellar mass table, and two draw.io design
 artifacts. The rebuild packages that work into a reproducible \texttt{uv}-managed
 Python project with a Keplerian radial-velocity model, differential-evolution
@@ -26,7 +26,7 @@ recovered \texttt{star0} observation set.
 
 \section{Archived Material}
 
-The recovered Polygence folder contributed the following assets:
+The recovered archive contributed the following assets:
 \begin{itemize}
     \item legacy scripts: \texttt{graphcomparison.py}, \texttt{nbodysolver.py}, and \texttt{rvdatareader.py}
     \item a stellar mass catalog for four systems
@@ -113,10 +113,10 @@ observation times, corrupted with measurement noise, and then passed through the
 same fitting pipeline. This gives a reproducible benchmark for validating the
 rebuild.
 
-\subsection{Recovered Polygence Data}
+\subsection{Recovered Observation Data}
 
 The archived real observations are now versioned under
-\texttt{data/polygence/}. The stellar mass catalog is:
+\texttt{data/archived\_observations/}. The stellar mass catalog is:
 \begin{center}
 \begin{tabular}{l l}
 \texttt{star0}: 1.11 $M_{\odot}$ & \texttt{star2}: 2.30 $M_{\odot}$ \\
@@ -149,7 +149,7 @@ truth:
     velocity Verlet integrator.}
 \end{figure}
 
-\subsection{Recovered Polygence \texttt{star0} Fit}
+\subsection{Recovered \texttt{star0} Fit}
 
 Running the new real-data example on \texttt{star0} yields:
 \begin{itemize}
@@ -163,7 +163,7 @@ Running the new real-data example on \texttt{star0} yields:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{figures/polygence_star0_fit.png}
+    \includegraphics[width=\textwidth]{figures/archived_star0_fit.png}
     \caption{Recovered fit for the archived \texttt{star0} dataset. The nearly
     circular best fit and short orbital period make this a clean real-data example
     for the rebuilt package.}
@@ -175,7 +175,7 @@ The rewrite now includes:
 \begin{itemize}
     \item packaged source code under \texttt{src/exoplanet\_est/}
     \item synthetic and real-data example scripts
-    \item archived Polygence CSVs under \texttt{data/polygence/}
+    \item archived CSVs under \texttt{data/archived\_observations/}
     \item documentation figures under \texttt{docs/figures/}
     \item this \LaTeX{} report as a companion artifact
 \end{itemize}
@@ -199,8 +199,8 @@ The core commands are:
 \begin{verbatim}
 uv sync
 MPLBACKEND=Agg uv run python examples/fit_synthetic.py --save outputs/rv_fit_preview.png
-MPLBACKEND=Agg uv run python examples/fit_polygence_star.py --star-index 0 \
-  --save outputs/polygence_star0_fit.png
+MPLBACKEND=Agg uv run python examples/fit_archived_star.py --star-index 0 \
+  --save outputs/archived_star0_fit.png
 latexmk -pdf -cd docs/exoplanet_showcase_report.tex
 \end{verbatim}
 

@@ -18,6 +18,13 @@ from exoplanet_est.keplerian import (
 from exoplanet_est.nbody import barycentric_state_from_orbit, integrate_two_body
 from exoplanet_est.optimize import RVFitResult, evaluate_on_dense_grid
 
+DARK_FIGURE_BG = "#020617"
+DARK_AXES_BG = "#0f172a"
+LIGHT_TEXT = "#e2e8f0"
+MUTED_TEXT = "#cbd5e1"
+SPINE_COLOR = "#475569"
+GRID_COLOR = "#94a3b8"
+
 
 @dataclass(frozen=True)
 class ShowcaseTruth:
@@ -94,16 +101,25 @@ def plot_fit_summary(
 
     plt.style.use("default")
     fig, axes = plt.subplots(1, 2, figsize=(16, 9))
-    fig.patch.set_facecolor("white")
+    fig.patch.set_facecolor(DARK_FIGURE_BG)
     fig.subplots_adjust(left=0.075, right=0.97, top=0.9, bottom=0.18, wspace=0.12)
+
+    for axis in axes:
+        axis.set_facecolor(DARK_AXES_BG)
+        axis.tick_params(colors=LIGHT_TEXT)
+        axis.xaxis.label.set_color(LIGHT_TEXT)
+        axis.yaxis.label.set_color(LIGHT_TEXT)
+        axis.title.set_color(LIGHT_TEXT)
+        for spine in axis.spines.values():
+            spine.set_color(SPINE_COLOR)
 
     axes[0].errorbar(
         dataset.times_days,
         dataset.radial_velocity_ms,
         yerr=dataset.uncertainty_ms,
         fmt="o",
-        color="#0f172a",
-        ecolor="#94a3b8",
+        color="#f8fafc",
+        ecolor="#64748b",
         elinewidth=1.2,
         capsize=2,
         ms=5,
@@ -128,8 +144,12 @@ def plot_fit_summary(
     axes[0].set_title("Radial Velocity Fit")
     axes[0].set_xlabel("Time (days)")
     axes[0].set_ylabel("Stellar radial velocity (m/s)")
-    axes[0].grid(alpha=0.2)
-    axes[0].legend(frameon=False, loc="upper right")
+    axes[0].grid(color=GRID_COLOR, alpha=0.14)
+    legend = axes[0].legend(frameon=True, loc="upper right")
+    legend.get_frame().set_facecolor(DARK_AXES_BG)
+    legend.get_frame().set_edgecolor(SPINE_COLOR)
+    for text in legend.get_texts():
+        text.set_color(LIGHT_TEXT)
 
     star_path = orbit.positions_m[0]
     planet_path = orbit.positions_m[1]
@@ -163,8 +183,12 @@ def plot_fit_summary(
     axes[1].set_xlabel("x (AU)")
     axes[1].set_ylabel("z (AU)")
     axes[1].set_aspect("equal", adjustable="box")
-    axes[1].grid(alpha=0.2)
-    axes[1].legend(frameon=False, loc="upper right")
+    axes[1].grid(color=GRID_COLOR, alpha=0.14)
+    legend = axes[1].legend(frameon=True, loc="upper right")
+    legend.get_frame().set_facecolor(DARK_AXES_BG)
+    legend.get_frame().set_edgecolor(SPINE_COLOR)
+    for text in legend.get_texts():
+        text.set_color(LIGHT_TEXT)
 
     metrics = [
         f"P = {fit_result.parameters.period_days:.1f} d",
@@ -179,7 +203,7 @@ def plot_fit_summary(
         "   |   ".join(metrics[:4]),
         "   |   ".join(metrics[4:]),
     ]
-    fig.suptitle(title, fontsize=22, fontweight="bold")
+    fig.suptitle(title, fontsize=22, fontweight="bold", color=LIGHT_TEXT)
     fig.text(
         0.5,
         0.07,
@@ -188,7 +212,7 @@ def plot_fit_summary(
         va="center",
         fontsize=10.5,
         linespacing=1.35,
-        color="#334155",
+        color=MUTED_TEXT,
     )
     return fig, axes
 
@@ -198,4 +222,4 @@ def save_figure(fig, path: str | Path) -> None:
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=180, bbox_inches="tight")
+    fig.savefig(path, dpi=180, bbox_inches="tight", facecolor=fig.get_facecolor())
