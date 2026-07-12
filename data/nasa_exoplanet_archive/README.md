@@ -14,8 +14,13 @@ for observational validation in this project.
 | `hd_3651` | HD 3651 | Butler et al. 2006 | `UID_0003093_RVC_002.tbl` |
 
 Provenance for each series (URL, bibcode, instrument, stellar mass) is recorded
-in `catalog.json`. Original IPAC table downloads are kept under `raw/tbl/` for
-auditability.
+in `catalog.json`. Original IPAC table downloads for the selected series are kept
+under `raw/tbl/` for auditability:
+
+- `51_peg.tbl` → `51_peg.csv`
+- `hd_209458_a.tbl` → `hd_209458.csv`
+- `70_vir_a.tbl` → `70_vir.csv`
+- `hd_3651_b.tbl` → `hd_3651.csv`
 
 ## CSV columns
 
