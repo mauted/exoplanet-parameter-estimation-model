@@ -1,0 +1,166 @@
+[
+  {
+    "key": "51_peg",
+    "host_name": "51 Peg",
+    "planet_name": "51 Peg b",
+    "reference": "Marcy et al. 1997 (ApJ, 481, 926)",
+    "bibcode": "1997ApJ...481..926M",
+    "archive_url": "https://exoplanetarchive.ipac.caltech.edu/data/ExoData/0113/0113357/data/UID_0113357_RVC_002.tbl",
+    "n_points": 111,
+    "star_mass_solar": 1.07,
+    "period_days": 4.230604521912243,
+    "semi_amplitude_ms": 56.05200563504549,
+    "eccentricity": 0.015081761540695158,
+    "omega_rad": 0.5287467468789645,
+    "t_periastron_days": -9.950382113076477,
+    "gamma_ms": 7.329708306769707,
+    "semi_major_axis_au": 0.05236750712546891,
+    "planet_mass_mjup": 0.466711394311714,
+    "residual_rms_ms": 5.198317515467068,
+    "chi2": 108.23769281553275,
+    "success": true,
+    "K_bound": [
+      1.0,
+      266.68
+    ],
+    "P_bound": [
+      1.4102487223958347,
+      12.69223850156251
+    ],
+    "e_bound": [
+      0.0,
+      0.85
+    ],
+    "t0_bound": [
+      -12.69223850156251,
+      12.69223850156251
+    ],
+    "gamma_bound": [
+      -265.9167,
+      267.4433
+    ]
+  },
+  {
+    "key": "hd_209458",
+    "host_name": "HD 209458",
+    "planet_name": "HD 209458 b",
+    "reference": "Butler et al. 2006 (ApJ, 646, 505)",
+    "bibcode": "2006ApJ...646..505B",
+    "archive_url": "https://exoplanetarchive.ipac.caltech.edu/data/ExoData/0108/0108859/data/UID_0108859_RVC_001.tbl",
+    "n_points": 64,
+    "star_mass_solar": 1.23,
+    "period_days": 3.5247201884758272,
+    "semi_amplitude_ms": 84.3508603334303,
+    "eccentricity": 0.012480680990361771,
+    "omega_rad": 0.7863875436750128,
+    "t_periastron_days": 1.161355802069229,
+    "gamma_ms": 0.050557390830965915,
+    "semi_major_axis_au": 0.04857412940021809,
+    "planet_mass_mjup": 0.725314512735672,
+    "residual_rms_ms": 4.782914466522131,
+    "chi2": 112.43942199174975,
+    "success": true,
+    "K_bound": [
+      1.0,
+      357.6
+    ],
+    "P_bound": [
+      0.5,
+      4.1724466602116514
+    ],
+    "e_bound": [
+      0.0,
+      0.85
+    ],
+    "t0_bound": [
+      -4.1724466602116514,
+      4.1724466602116514
+    ],
+    "gamma_bound": [
+      -377.95000000000005,
+      337.25
+    ]
+  },
+  {
+    "key": "70_vir",
+    "host_name": "70 Vir",
+    "planet_name": "70 Vir b",
+    "reference": "Butler et al. 2006 (ApJ, 646, 505)",
+    "bibcode": "2006ApJ...646..505B",
+    "archive_url": "https://exoplanetarchive.ipac.caltech.edu/data/ExoData/0065/0065721/data/UID_0065721_RVC_001.tbl",
+    "n_points": 74,
+    "star_mass_solar": 1.09,
+    "period_days": 116.68783300570354,
+    "semi_amplitude_ms": 316.791004533739,
+    "eccentricity": 0.40187568219439196,
+    "omega_rad": -0.024583161134116616,
+    "t_periastron_days": 44.7941447404921,
+    "gamma_ms": -0.1846798773073856,
+    "semi_major_axis_au": 0.48198721316507426,
+    "planet_mass_mjup": 7.419148331696965,
+    "residual_rms_ms": 7.083355225977824,
+    "chi2": 120.10532062216363,
+    "success": true,
+    "K_bound": [
+      1.0,
+      1287.4
+    ],
+    "P_bound": [
+      38.91749728439921,
+      350.25747555959293
+    ],
+    "e_bound": [
+      0.0,
+      0.85
+    ],
+    "t0_bound": [
+      -350.25747555959293,
+      350.25747555959293
+    ],
+    "gamma_bound": [
+      -1376.5500000000002,
+      1198.25
+    ]
+  },
+  {
+    "key": "hd_3651",
+    "host_name": "HD 3651",
+    "planet_name": "HD 3651 b",
+    "reference": "Butler et al. 2006 (ApJ, 646, 505)",
+    "bibcode": "2006ApJ...646..505B",
+    "archive_url": "https://exoplanetarchive.ipac.caltech.edu/data/ExoData/0003/0003093/data/UID_0003093_RVC_002.tbl",
+    "n_points": 121,
+    "star_mass_solar": 0.799,
+    "period_days": 62.19739720065354,
+    "semi_amplitude_ms": 16.306331561817384,
+    "eccentricity": 0.6475917658763388,
+    "omega_rad": -2.2219438123138624,
+    "t_periastron_days": 41.98693913454395,
+    "gamma_ms": -0.33021850971266387,
+    "semi_major_axis_au": 0.28510526291836724,
+    "planet_mass_mjup": 0.20860640049343226,
+    "residual_rms_ms": 7.040285108458802,
+    "chi2": 516.6550207611509,
+    "success": true,
+    "K_bound": [
+      1.0,
+      123.8
+    ],
+    "P_bound": [
+      20.762183434912984,
+      186.85965091421684
+    ],
+    "e_bound": [
+      0.0,
+      0.85
+    ],
+    "t0_bound": [
+      -186.85965091421684,
+      186.85965091421684
+    ],
+    "gamma_bound": [
+      -121.7,
+      125.89999999999999
+    ]
+  }
+]

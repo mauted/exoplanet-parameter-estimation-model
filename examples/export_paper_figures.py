@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -10,13 +11,15 @@ import numpy as np
 from exoplanet_est.constants import MASS_JUPITER, MASS_SUN
 from exoplanet_est.data import (
     generate_synthetic_dataset,
-    load_archived_star_dataset,
+    list_public_targets,
+    load_public_target_dataset,
     save_synthetic_dataset_csv,
 )
 from exoplanet_est.keplerian import OrbitalParameters, semi_amplitude_from_masses
 from exoplanet_est.optimize import (
     export_optimization_history_csv,
     fit_radial_velocity_curve,
+    periodogram_bounds,
 )
 from exoplanet_est.plot import (
     ShowcaseTruth,
@@ -24,41 +27,16 @@ from exoplanet_est.plot import (
     plot_fit_summary,
     save_figure,
 )
-from scipy.optimize import Bounds
 
 FIGURES_DIR = Path("docs/figures")
 DATA_DIR = FIGURES_DIR / "plotdata"
 
-
-def bounds_for_dataset(dataset, star_index: int) -> Bounds:
-    time_span = float(dataset.times_days.max() - dataset.times_days.min())
-    velocity_span = float(
-        dataset.radial_velocity_ms.max() - dataset.radial_velocity_ms.min()
-    )
-    amplitude_upper = max(abs(velocity_span), 20.0) * 2.0
-    period_lower = max(time_span / 40.0, 0.75)
-    period_upper = max(time_span * 1.2, period_lower * 3.0)
-    if star_index == 1:
-        period_upper = max(period_upper, 6000.0)
-    gamma_guess = float(dataset.radial_velocity_ms.mean())
-    return Bounds(
-        [
-            1.0,
-            period_lower,
-            0.0,
-            -3.14159,
-            dataset.times_days.min() - period_upper,
-            gamma_guess - amplitude_upper,
-        ],
-        [
-            amplitude_upper,
-            period_upper,
-            0.85,
-            3.14159,
-            dataset.times_days.min() + period_upper,
-            gamma_guess + amplitude_upper,
-        ],
-    )
+TARGET_SEEDS = {
+    "51_peg": 0,
+    "hd_209458": 1,
+    "70_vir": 2,
+    "hd_3651": 3,
+}
 
 
 def export_one(
@@ -131,29 +109,71 @@ def export_synthetic() -> None:
     )
 
 
-def export_archived(star_index: int) -> None:
-    dataset, star_mass_kg = load_archived_star_dataset(star_index)
+def export_public(target_key: str) -> dict:
+    dataset, star_mass_kg, target = load_public_target_dataset(target_key)
+    bounds = periodogram_bounds(
+        dataset,
+        eccentricity_upper=target.eccentricity_upper,
+    )
     fit_result = fit_radial_velocity_curve(
         dataset,
         star_mass_kg=star_mass_kg,
-        bounds=bounds_for_dataset(dataset, star_index),
+        bounds=bounds,
         max_iterations=400,
-        seed=star_index,
+        seed=TARGET_SEEDS.get(target_key, 0),
     )
+    stem = f"{target_key}_fit"
     export_one(
-        stem=f"archived_star{star_index}_fit",
+        stem=stem,
         dataset=dataset,
         fit_result=fit_result,
-        title=f"Archived Star {star_index} Radial Velocity Fit",
+        title=f"{target.host_name} Radial Velocity Fit",
     )
+    params = fit_result.parameters
+    summary = {
+        "key": target.key,
+        "host_name": target.host_name,
+        "planet_name": target.planet_name,
+        "reference": target.reference,
+        "bibcode": target.bibcode,
+        "archive_url": target.archive_url,
+        "n_points": int(len(dataset.times_days)),
+        "star_mass_solar": target.star_mass_solar,
+        "period_days": params.period_days,
+        "semi_amplitude_ms": params.semi_amplitude_ms,
+        "eccentricity": params.eccentricity,
+        "omega_rad": params.omega_rad,
+        "t_periastron_days": params.t_periastron_days,
+        "gamma_ms": params.gamma_ms,
+        "semi_major_axis_au": fit_result.semi_major_axis_m / 1.495978707e11,
+        "planet_mass_mjup": fit_result.planet_mass_kg / MASS_JUPITER,
+        "residual_rms_ms": fit_result.residual_rms_ms,
+        "chi2": fit_result.weighted_sse,
+        "success": fit_result.success,
+        "K_bound": [float(bounds.lb[0]), float(bounds.ub[0])],
+        "P_bound": [float(bounds.lb[1]), float(bounds.ub[1])],
+        "e_bound": [float(bounds.lb[2]), float(bounds.ub[2])],
+        "t0_bound": [float(bounds.lb[4]), float(bounds.ub[4])],
+        "gamma_bound": [float(bounds.lb[5]), float(bounds.ub[5])],
+    }
+    print(
+        f"{target.key}: P={params.period_days:.3f} d  "
+        f"K={params.semi_amplitude_ms:.2f} m/s  "
+        f"e={params.eccentricity:.3f}  "
+        f"Mp={summary['planet_mass_mjup']:.3f} Mjup  "
+        f"RMS={fit_result.residual_rms_ms:.2f} m/s"
+    )
+    return summary
 
 
 def main() -> None:
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     export_synthetic()
-    for star_index in range(4):
-        export_archived(star_index)
+    summaries = [export_public(target.key) for target in list_public_targets()]
+    summary_path = DATA_DIR / "public_fit_summary.json"
+    summary_path.write_text(json.dumps(summaries, indent=2) + "\n")
+    print(f"wrote {summary_path}")
 
 
 if __name__ == "__main__":

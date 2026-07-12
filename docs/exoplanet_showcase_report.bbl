@@ -1,4 +1,4 @@
-\begin{thebibliography}{12}
+\begin{thebibliography}{15}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -66,6 +66,14 @@ Rainer Storn and Kenneth Price.
   341--359, 1997.
 \newblock \doi{10.1023/A:1008202821328}.
 
+\bibitem[Christiansen et~al.(2025)]{christiansen2025nea}
+Jessie~L. Christiansen et~al.
+\newblock The {NASA} exoplanet archive and exoplanet follow-up observing
+  program: Data, tools, and usage.
+\newblock \emph{The Planetary Science Journal}, 6\penalty0 (8):\penalty0 186,
+  2025.
+\newblock \doi{10.3847/PSJ/ade3c2}.
+
 \bibitem[Lindegren and Dravins(2003)]{lindegren2003fundamental}
 L.~Lindegren and D.~Dravins.
 \newblock The fundamental definition of ``radial velocity''.
@@ -85,5 +93,24 @@ Loup Verlet.
   properties of {Lennard-Jones} molecules.
 \newblock \emph{Physical Review}, 159\penalty0 (1):\penalty0 98--103, 1967.
 \newblock \doi{10.1103/PhysRev.159.98}.
+
+\bibitem[Marcy et~al.(1997)Marcy, Butler, Williams, Bildsten, Graham, Ghez, and
+  Jernigan]{marcy1997peg}
+Geoffrey~W. Marcy, R.~Paul Butler, Eric Williams, Lars Bildsten, James~R.
+  Graham, Andrea~M. Ghez, and J.~Garrett Jernigan.
+\newblock The planet around 51~{Pegasi}.
+\newblock \emph{The Astrophysical Journal}, 481\penalty0 (2):\penalty0
+  926--935, 1997.
+\newblock \doi{10.1086/304088}.
+
+\bibitem[Butler et~al.(2006)Butler, Wright, Marcy, Fischer, Vogt, Tinney,
+  Jones, Carter, Johnson, McCarthy, and Penny]{butler2006catalog}
+R.~Paul Butler, J.~T. Wright, G.~W. Marcy, D.~A. Fischer, S.~S. Vogt, C.~G.
+  Tinney, H.~R.~A. Jones, B.~D. Carter, J.~A. Johnson, C.~McCarthy, and A.~J.
+  Penny.
+\newblock Catalog of nearby exoplanets.
+\newblock \emph{The Astrophysical Journal}, 646\penalty0 (1):\penalty0
+  505--522, 2006.
+\newblock \doi{10.1086/504701}.
 
 \end{thebibliography}

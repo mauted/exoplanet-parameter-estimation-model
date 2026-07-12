@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import csv
+import json
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +13,9 @@ from exoplanet_est.constants import DAY_IN_SECONDS, MASS_SUN
 from exoplanet_est.doppler import doppler_shift_to_velocity, velocity_to_doppler_shift
 from exoplanet_est.keplerian import OrbitalParameters, radial_velocity_curve
 
-ARCHIVED_DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "archived_observations"
+PUBLIC_DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "nasa_exoplanet_archive"
+# Backward-compatible alias used by earlier package exports.
+ARCHIVED_DATA_DIR = PUBLIC_DATA_DIR
 
 
 @dataclass(frozen=True)
@@ -25,6 +28,65 @@ class RadialVelocityDataset:
     label: str = "dataset"
 
 
+@dataclass(frozen=True)
+class PublicTarget:
+    """Metadata for one NASA Exoplanet Archive RVC series."""
+
+    key: str
+    host_name: str
+    planet_name: str
+    star_mass_solar: float
+    csv_file: str
+    archive_url: str
+    overview_url: str
+    eccentricity_upper: float
+    reference: str
+    bibcode: str
+    n_points: int
+    notes: str = ""
+
+
+def load_public_catalog(path: str | Path | None = None) -> dict:
+    """Load the packaged NASA Exoplanet Archive catalog metadata."""
+
+    path = Path(path) if path is not None else PUBLIC_DATA_DIR / "catalog.json"
+    with path.open() as handle:
+        return json.load(handle)
+
+
+def list_public_targets(path: str | Path | None = None) -> tuple[PublicTarget, ...]:
+    """Return the ordered public observational targets."""
+
+    catalog = load_public_catalog(path)
+    return tuple(
+        PublicTarget(
+            key=entry["key"],
+            host_name=entry["host_name"],
+            planet_name=entry["planet_name"],
+            star_mass_solar=float(entry["star_mass_solar"]),
+            csv_file=entry["csv_file"],
+            archive_url=entry["archive_url"],
+            overview_url=entry["overview_url"],
+            eccentricity_upper=float(entry.get("eccentricity_upper", 0.85)),
+            reference=entry["reference"],
+            bibcode=entry["bibcode"],
+            n_points=int(entry["n_points"]),
+            notes=entry.get("notes", ""),
+        )
+        for entry in catalog["targets"]
+    )
+
+
+def get_public_target(key: str, path: str | Path | None = None) -> PublicTarget:
+    """Look up one public target by catalog key."""
+
+    for target in list_public_targets(path):
+        if target.key == key:
+            return target
+    known = ", ".join(target.key for target in list_public_targets(path))
+    raise KeyError(f"Unknown public target {key!r}. Known keys: {known}")
+
+
 def load_radial_velocity_csv(
     path: str | Path,
     *,
@@ -33,11 +95,13 @@ def load_radial_velocity_csv(
     value_column: str | None = None,
     uncertainty_column: str = "uncertainty_ms",
     time_unit: str = "days",
+    label: str | None = None,
 ) -> RadialVelocityDataset:
     """Load a radial-velocity dataset from a CSV file.
 
     Supported CSV shapes:
     - named columns such as `time_days`, `radial_velocity_ms`, `uncertainty_ms`
+    - NASA-style `time_jd`, `radial_velocity_ms`, `uncertainty_ms`
     - unnamed numeric columns ordered as time, value, optional uncertainty
     """
 
@@ -63,9 +127,20 @@ def load_radial_velocity_csv(
         if not records:
             raise ValueError(f"CSV file contains a header but no data rows: {path}")
 
-        value_column = value_column or (
-            "radial_velocity_ms" if value_kind == "velocity" else "doppler_shift"
-        )
+        header_names = {name.lower(): name for name in records[0]}
+        if time_column not in records[0] and "time_jd" in header_names:
+            time_column = header_names["time_jd"]
+            time_unit = "days"
+        if value_column is None:
+            if value_kind == "velocity":
+                value_column = header_names.get(
+                    "radial_velocity_ms", "radial_velocity_ms"
+                )
+            else:
+                value_column = header_names.get("doppler_shift", "doppler_shift")
+        if uncertainty_column not in records[0]:
+            uncertainty_column = header_names.get("uncertainty_ms", uncertainty_column)
+
         times = np.array([float(row[time_column]) for row in records], dtype=float)
         values = np.array([float(row[value_column]) for row in records], dtype=float)
         uncertainties = np.array(
@@ -96,18 +171,39 @@ def load_radial_velocity_csv(
         times_days=times_days,
         radial_velocity_ms=radial_velocity_ms,
         uncertainty_ms=uncertainties,
-        label=path.stem,
+        label=label or path.stem,
     )
 
 
-def load_archived_star_masses(path: str | Path | None = None) -> np.ndarray:
-    """Load the archived stellar mass catalog in solar masses."""
+def load_public_target_dataset(
+    key: str,
+    *,
+    data_dir: str | Path | None = None,
+    relative_times: bool = True,
+) -> tuple[RadialVelocityDataset, float, PublicTarget]:
+    """Load one public NASA Exoplanet Archive RVC series and its stellar mass."""
 
-    path = Path(path) if path is not None else ARCHIVED_DATA_DIR / "star-masses.csv"
-    rows = np.genfromtxt(path, delimiter=",", skip_header=1)
-    if rows.ndim == 1:
-        rows = rows[None, :]
-    return rows[:, 1]
+    data_dir = Path(data_dir) if data_dir is not None else PUBLIC_DATA_DIR
+    target = get_public_target(key, data_dir / "catalog.json")
+    dataset = load_radial_velocity_csv(
+        data_dir / target.csv_file,
+        value_kind="velocity",
+        time_column="time_jd",
+        value_column="radial_velocity_ms",
+        uncertainty_column="uncertainty_ms",
+        time_unit="days",
+        label=target.key,
+    )
+    times = np.asarray(dataset.times_days, dtype=float)
+    if relative_times:
+        times = times - times.min()
+    dataset = RadialVelocityDataset(
+        times_days=times,
+        radial_velocity_ms=np.asarray(dataset.radial_velocity_ms, dtype=float),
+        uncertainty_ms=np.asarray(dataset.uncertainty_ms, dtype=float),
+        label=target.key,
+    )
+    return dataset, float(target.star_mass_solar * MASS_SUN), target
 
 
 def load_archived_star_dataset(
@@ -116,24 +212,35 @@ def load_archived_star_dataset(
     data_dir: str | Path | None = None,
     uncertainty_ms: float = 1.0,
 ) -> tuple[RadialVelocityDataset, float]:
-    """Load one archived star dataset and return its stellar mass."""
+    """Backward-compatible wrapper mapping index 0..3 onto public targets."""
 
-    data_dir = Path(data_dir) if data_dir is not None else ARCHIVED_DATA_DIR
-    dataset = load_radial_velocity_csv(
-        data_dir / f"star{star_index}.csv",
-        value_kind="doppler_shift",
-        time_column="Seconds",
-        value_column="Doppler Shift",
-        time_unit="seconds",
+    del uncertainty_ms  # public CSVs already include published uncertainties
+    targets = list_public_targets(
+        None if data_dir is None else Path(data_dir) / "catalog.json"
     )
-    dataset = RadialVelocityDataset(
-        times_days=dataset.times_days,
-        radial_velocity_ms=dataset.radial_velocity_ms,
-        uncertainty_ms=np.full_like(dataset.times_days, uncertainty_ms, dtype=float),
-        label=f"archived-star{star_index}",
+    if star_index < 0 or star_index >= len(targets):
+        raise IndexError(
+            f"star_index must be in 0..{len(targets) - 1}; got {star_index}"
+        )
+    dataset, star_mass_kg, _target = load_public_target_dataset(
+        targets[star_index].key,
+        data_dir=data_dir,
     )
-    star_mass_solar = load_archived_star_masses(data_dir / "star-masses.csv")[star_index]
-    return dataset, float(star_mass_solar * MASS_SUN)
+    return dataset, star_mass_kg
+
+
+def load_archived_star_masses(path: str | Path | None = None) -> np.ndarray:
+    """Backward-compatible stellar-mass vector for the public catalog order."""
+
+    if path is not None:
+        rows = np.genfromtxt(path, delimiter=",", skip_header=1)
+        if rows.ndim == 1:
+            rows = rows[None, :]
+        return rows[:, 1]
+    return np.asarray(
+        [target.star_mass_solar for target in list_public_targets()],
+        dtype=float,
+    )
 
 
 def save_synthetic_dataset_csv(

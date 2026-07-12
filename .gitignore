@@ -12,3 +12,6 @@ docs/*.out
 docs/*.toc
 docs/*.blg
 docs/*.synctex.gz
+data/nasa_exoplanet_archive/raw/*.bat
+data/nasa_exoplanet_archive/raw/*.log
+data/nasa_exoplanet_archive/raw/rvc_index.json

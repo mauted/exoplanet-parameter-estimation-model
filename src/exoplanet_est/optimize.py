@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, least_squares
+from scipy.signal import lombscargle
 
 from exoplanet_est.constants import DAY_IN_SECONDS, G
 from exoplanet_est.data import RadialVelocityDataset
@@ -64,6 +65,29 @@ class RVFitResult:
     history: OptimizationHistory | None = None
 
 
+def estimate_dominant_period_days(
+    dataset: RadialVelocityDataset,
+    *,
+    minimum_period_days: float = 0.5,
+    samples: int = 4000,
+) -> float:
+    """Estimate the dominant RV period with a normalized Lomb-Scargle periodogram."""
+
+    times = np.asarray(dataset.times_days, dtype=float)
+    velocities = np.asarray(dataset.radial_velocity_ms, dtype=float)
+    velocities = velocities - np.mean(velocities)
+    time_span = float(times.max() - times.min())
+    maximum_period = max(time_span, minimum_period_days * 3.0)
+    periods = np.logspace(
+        np.log10(minimum_period_days),
+        np.log10(maximum_period),
+        samples,
+    )
+    angular_frequencies = 2.0 * np.pi / periods
+    power = lombscargle(times, velocities, angular_frequencies, normalize=True)
+    return float(periods[int(np.argmax(power))])
+
+
 def default_bounds(dataset: RadialVelocityDataset) -> Bounds:
     """Construct broad but stable bounds from the observation window."""
 
@@ -100,6 +124,49 @@ def default_bounds(dataset: RadialVelocityDataset) -> Bounds:
         dtype=float,
     )
     return Bounds(lower, upper)
+
+
+def periodogram_bounds(
+    dataset: RadialVelocityDataset,
+    *,
+    eccentricity_upper: float = 0.85,
+    period_factor: float = 3.0,
+    minimum_period_days: float = 0.5,
+) -> Bounds:
+    """Build search bounds centered on the Lomb-Scargle peak period."""
+
+    time_span = float(dataset.times_days.max() - dataset.times_days.min())
+    velocity_span = float(
+        dataset.radial_velocity_ms.max() - dataset.radial_velocity_ms.min()
+    )
+    gamma_guess = float(np.median(dataset.radial_velocity_ms))
+    peak_period = estimate_dominant_period_days(
+        dataset,
+        minimum_period_days=minimum_period_days,
+    )
+    period_lower = max(minimum_period_days, peak_period / period_factor)
+    period_upper = min(max(time_span * 1.2, period_lower * 3.0), peak_period * period_factor)
+    period_upper = max(period_upper, period_lower * 1.5)
+    amplitude_upper = max(abs(velocity_span), 20.0) * 2.0
+
+    return Bounds(
+        [
+            1.0,
+            period_lower,
+            0.0,
+            -np.pi,
+            dataset.times_days.min() - period_upper,
+            gamma_guess - amplitude_upper,
+        ],
+        [
+            amplitude_upper,
+            period_upper,
+            eccentricity_upper,
+            np.pi,
+            dataset.times_days.min() + period_upper,
+            gamma_guess + amplitude_upper,
+        ],
+    )
 
 
 def _vector_to_parameters(vector: np.ndarray) -> OrbitalParameters:
