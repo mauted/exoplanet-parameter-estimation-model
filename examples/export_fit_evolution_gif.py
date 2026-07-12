@@ -64,6 +64,7 @@ def main() -> None:
         theme="dark",
         max_frames=args.max_frames,
         frame_duration_ms=args.frame_duration_ms,
+        phase_fold=True,
     )
     print(f"History steps: {len(fit_result.history.points)}")
     print(f"GIF:           {output_path}")

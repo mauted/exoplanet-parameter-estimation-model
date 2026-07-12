@@ -12,6 +12,7 @@ from exoplanet_est.constants import AU_IN_METERS, DAY_IN_SECONDS, MASS_JUPITER, 
 from exoplanet_est.data import RadialVelocityDataset
 from exoplanet_est.keplerian import (
     OrbitalParameters,
+    radial_velocity_curve,
     solve_kepler_equation,
     true_anomaly_from_eccentric_anomaly,
 )
@@ -108,6 +109,23 @@ class PlotSeries:
     star_z_au: np.ndarray
     planet_x_au: np.ndarray
     planet_z_au: np.ndarray
+    phase_fold: bool = False
+    x_label: str = "Time (days)"
+    rv_title: str = "Radial Velocity Fit"
+
+
+def should_phase_fold(
+    dataset: RadialVelocityDataset,
+    period_days: float,
+    *,
+    min_cycles: float = 8.0,
+) -> bool:
+    """Recommend phase-folding when many orbital cycles span the baseline."""
+
+    time_span = float(dataset.times_days.max() - dataset.times_days.min())
+    if period_days <= 0.0:
+        return False
+    return (time_span / period_days) >= min_cycles
 
 
 def _orbit_simulation(
@@ -161,18 +179,62 @@ def build_plot_series(
     *,
     truth: ShowcaseTruth | None = None,
     n_orbit_steps: int = 2000,
+    phase_fold: bool | None = None,
 ) -> PlotSeries:
     """Build the arrays used by Matplotlib and PGFPlots exporters."""
+
+    period = float(fit_result.parameters.period_days)
+    fold = (
+        should_phase_fold(dataset, period)
+        if phase_fold is None
+        else bool(phase_fold)
+    )
+
+    orbit = _orbit_simulation(
+        fit_result,
+        reference_day=float(dataset.times_days.min()),
+        n_steps=n_orbit_steps,
+    )
+    star_path = orbit.positions_m[0]
+    planet_path = orbit.positions_m[1]
+
+    if fold:
+        t0 = float(fit_result.parameters.t_periastron_days)
+        obs_phase = np.mod(
+            (np.asarray(dataset.times_days, dtype=float) - t0) / period,
+            1.0,
+        )
+        order = np.argsort(obs_phase)
+        model_phase = np.linspace(0.0, 1.0, 400)
+        model_times = t0 + model_phase * period
+        model_curve = radial_velocity_curve(fit_result.parameters, model_times)
+        truth_curve = None
+        if truth is not None:
+            truth_curve = radial_velocity_curve(truth.parameters, model_times)
+        return PlotSeries(
+            times_days=obs_phase[order],
+            radial_velocity_ms=np.asarray(dataset.radial_velocity_ms, dtype=float)[
+                order
+            ],
+            uncertainty_ms=np.asarray(dataset.uncertainty_ms, dtype=float)[order],
+            model_times_days=model_phase,
+            model_velocity_ms=np.asarray(model_curve, dtype=float),
+            truth_velocity_ms=(
+                None if truth_curve is None else np.asarray(truth_curve, dtype=float)
+            ),
+            star_x_au=star_path[:, 0] / AU_IN_METERS,
+            star_z_au=star_path[:, 2] / AU_IN_METERS,
+            planet_x_au=planet_path[:, 0] / AU_IN_METERS,
+            planet_z_au=planet_path[:, 2] / AU_IN_METERS,
+            phase_fold=True,
+            x_label="Orbital phase",
+            rv_title="Phase-Folded Radial Velocity",
+        )
 
     dense_times, dense_curve = evaluate_on_dense_grid(
         fit_result.parameters,
         start_day=float(dataset.times_days.min()),
         stop_day=float(dataset.times_days.max()),
-    )
-    orbit = _orbit_simulation(
-        fit_result,
-        reference_day=float(dataset.times_days.min()),
-        n_steps=n_orbit_steps,
     )
     truth_curve = None
     if truth is not None:
@@ -182,19 +244,22 @@ def build_plot_series(
             stop_day=float(dataset.times_days.max()),
         )[1]
 
-    star_path = orbit.positions_m[0]
-    planet_path = orbit.positions_m[1]
     return PlotSeries(
         times_days=np.asarray(dataset.times_days, dtype=float),
         radial_velocity_ms=np.asarray(dataset.radial_velocity_ms, dtype=float),
         uncertainty_ms=np.asarray(dataset.uncertainty_ms, dtype=float),
         model_times_days=dense_times,
         model_velocity_ms=dense_curve,
-        truth_velocity_ms=None if truth_curve is None else np.asarray(truth_curve, dtype=float),
+        truth_velocity_ms=(
+            None if truth_curve is None else np.asarray(truth_curve, dtype=float)
+        ),
         star_x_au=star_path[:, 0] / AU_IN_METERS,
         star_z_au=star_path[:, 2] / AU_IN_METERS,
         planet_x_au=planet_path[:, 0] / AU_IN_METERS,
         planet_z_au=planet_path[:, 2] / AU_IN_METERS,
+        phase_fold=False,
+        x_label="Time (days)",
+        rv_title="Radial Velocity Fit",
     )
 
 
@@ -207,6 +272,7 @@ def export_plot_series(series: PlotSeries, stem: str | Path) -> dict[str, Path]:
     obs_path = stem.with_name(f"{stem.name}_rv_obs.csv")
     model_path = stem.with_name(f"{stem.name}_rv_model.csv")
     orbit_path = stem.with_name(f"{stem.name}_orbit.csv")
+    x_name = "phase" if series.phase_fold else "time_days"
 
     np.savetxt(
         obs_path,
@@ -214,7 +280,7 @@ def export_plot_series(series: PlotSeries, stem: str | Path) -> dict[str, Path]:
             [series.times_days, series.radial_velocity_ms, series.uncertainty_ms]
         ),
         delimiter=",",
-        header="time_days,radial_velocity_ms,uncertainty_ms",
+        header=f"{x_name},radial_velocity_ms,uncertainty_ms",
         comments="",
     )
 
@@ -222,7 +288,7 @@ def export_plot_series(series: PlotSeries, stem: str | Path) -> dict[str, Path]:
         model_array = np.column_stack(
             [series.model_times_days, series.model_velocity_ms]
         )
-        model_header = "time_days,model_velocity_ms"
+        model_header = f"{x_name},model_velocity_ms"
     else:
         model_array = np.column_stack(
             [
@@ -231,7 +297,7 @@ def export_plot_series(series: PlotSeries, stem: str | Path) -> dict[str, Path]:
                 series.truth_velocity_ms,
             ]
         )
-        model_header = "time_days,model_velocity_ms,truth_velocity_ms"
+        model_header = f"{x_name},model_velocity_ms,truth_velocity_ms"
     np.savetxt(
         model_path,
         model_array,
@@ -240,7 +306,6 @@ def export_plot_series(series: PlotSeries, stem: str | Path) -> dict[str, Path]:
         comments="",
     )
 
-    # Downsample the orbit path for compact PGFPlots tables.
     stride = max(len(series.planet_x_au) // 400, 1)
     np.savetxt(
         orbit_path,
@@ -269,6 +334,7 @@ def plot_fit_summary(
     status_line: str | None = None,
     n_orbit_steps: int = 2000,
     fixed_limits: dict[str, tuple[float, float]] | None = None,
+    phase_fold: bool | None = None,
 ):
     """Create the 16:9 showcase figure."""
 
@@ -278,6 +344,7 @@ def plot_fit_summary(
         fit_result,
         truth=truth,
         n_orbit_steps=n_orbit_steps,
+        phase_fold=phase_fold,
     )
 
     plt.style.use("default")
@@ -305,6 +372,7 @@ def plot_fit_summary(
         capsize=2,
         ms=5,
         label="observations",
+        zorder=3,
     )
     axes[0].plot(
         series.model_times_days,
@@ -312,6 +380,7 @@ def plot_fit_summary(
         color=theme.fit,
         lw=2.5,
         label="best fit",
+        zorder=2,
     )
     if series.truth_velocity_ms is not None:
         axes[0].plot(
@@ -321,11 +390,14 @@ def plot_fit_summary(
             lw=1.6,
             ls="--",
             label="ground truth",
+            zorder=1,
         )
 
-    axes[0].set_title("Radial Velocity Fit")
-    axes[0].set_xlabel("Time (days)")
+    axes[0].set_title(series.rv_title)
+    axes[0].set_xlabel(series.x_label)
     axes[0].set_ylabel("Stellar radial velocity (m/s)")
+    if series.phase_fold:
+        axes[0].set_xlim(0.0, 1.0)
     axes[0].grid(color=theme.grid, alpha=0.25 if theme.name == "print" else 0.14)
     legend = axes[0].legend(frameon=theme.legend_frame, loc="upper right")
     if theme.legend_frame:
@@ -422,7 +494,6 @@ def select_history_frames(
     if len(points) <= max_frames:
         return points
 
-    # Favor early generations where χ² changes quickly, always keep the final polish.
     sample_count = max_frames - 1
     positions = np.unique(
         np.round(np.geomspace(1, len(points) - 1, num=sample_count)).astype(int) - 1
@@ -438,22 +509,38 @@ def fixed_limits_from_fit(
     fit_result: RVFitResult,
     *,
     n_orbit_steps: int = 400,
+    phase_fold: bool | None = None,
 ) -> dict[str, tuple[float, float]]:
     """Freeze axis ranges from the final fit so the GIF does not jump around."""
 
-    series = build_plot_series(dataset, fit_result, n_orbit_steps=n_orbit_steps)
+    series = build_plot_series(
+        dataset,
+        fit_result,
+        n_orbit_steps=n_orbit_steps,
+        phase_fold=phase_fold,
+    )
     rv_pad = 0.08 * max(
         float(np.ptp(series.radial_velocity_ms)),
         float(np.ptp(series.model_velocity_ms)),
         1.0,
     )
-    rv_ymin = min(float(series.radial_velocity_ms.min()), float(series.model_velocity_ms.min()))
-    rv_ymax = max(float(series.radial_velocity_ms.max()), float(series.model_velocity_ms.max()))
+    rv_ymin = min(
+        float(series.radial_velocity_ms.min()),
+        float(series.model_velocity_ms.min()),
+    )
+    rv_ymax = max(
+        float(series.radial_velocity_ms.max()),
+        float(series.model_velocity_ms.max()),
+    )
     orbit_x = np.concatenate([series.planet_x_au, series.star_x_au])
     orbit_z = np.concatenate([series.planet_z_au, series.star_z_au])
     orbit_pad = 0.08 * max(float(np.ptp(orbit_x)), float(np.ptp(orbit_z)), 0.1)
+    if series.phase_fold:
+        rv_x = (0.0, 1.0)
+    else:
+        rv_x = (float(dataset.times_days.min()), float(dataset.times_days.max()))
     return {
-        "rv_x": (float(dataset.times_days.min()), float(dataset.times_days.max())),
+        "rv_x": rv_x,
         "rv_y": (rv_ymin - rv_pad, rv_ymax + rv_pad),
         "orbit_x": (float(orbit_x.min()) - orbit_pad, float(orbit_x.max()) + orbit_pad),
         "orbit_z": (float(orbit_z.min()) - orbit_pad, float(orbit_z.max()) + orbit_pad),
@@ -472,6 +559,7 @@ def render_fit_evolution_gif(
     frame_duration_ms: int = 120,
     final_hold_frames: int = 12,
     n_orbit_steps: int = 400,
+    phase_fold: bool | None = None,
 ) -> Path:
     """Render a dark-theme GIF of the best-so-far fit across optimizer generations."""
 
@@ -492,6 +580,7 @@ def render_fit_evolution_gif(
         dataset,
         final_result,
         n_orbit_steps=n_orbit_steps,
+        phase_fold=phase_fold,
     )
 
     images: list[Image.Image] = []
@@ -509,6 +598,7 @@ def render_fit_evolution_gif(
             status_line=_status_line(point),
             n_orbit_steps=n_orbit_steps,
             fixed_limits=limits,
+            phase_fold=phase_fold,
         )
         buffer = io.BytesIO()
         fig.savefig(

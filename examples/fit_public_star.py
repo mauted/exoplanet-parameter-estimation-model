@@ -75,6 +75,7 @@ def main() -> None:
         fit_result,
         title=f"{target.host_name} Radial Velocity Fit",
         theme=args.theme,
+        phase_fold=True,
     )
     save_figure(fig, output_path)
 

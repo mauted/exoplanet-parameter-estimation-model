@@ -46,6 +46,7 @@ def export_one(
     fit_result,
     title: str,
     truth: ShowcaseTruth | None = None,
+    phase_fold: bool | None = None,
 ) -> None:
     fig, _, series = plot_fit_summary(
         dataset,
@@ -53,12 +54,13 @@ def export_one(
         truth=truth,
         title=title,
         theme="print",
+        phase_fold=phase_fold,
     )
     pdf_path = FIGURES_DIR / f"{stem}.pdf"
     save_figure(fig, pdf_path)
     export_plot_series(series, DATA_DIR / stem)
     plt.close(fig)
-    print(f"wrote {pdf_path}")
+    print(f"wrote {pdf_path} (phase_fold={series.phase_fold})")
 
 
 def export_synthetic() -> None:
@@ -128,6 +130,7 @@ def export_public(target_key: str) -> dict:
         dataset=dataset,
         fit_result=fit_result,
         title=f"{target.host_name} Radial Velocity Fit",
+        phase_fold=True,
     )
     params = fit_result.parameters
     summary = {
